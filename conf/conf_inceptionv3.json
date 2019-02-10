@@ -5,12 +5,12 @@
 
   "train_path"      : "train",
   "test_path"       : "test",
-  "features_path"   : "out/inceptionv3/imaug_features.h5",
-  "labels_path"     : "out/inceptionv3/imaug_labels.h5",
-  "results"         : "out/inceptionv3/imaug_results.txt",
-  "classifier_path" : "out/inceptionv3/imaug_classifier.pickle",
-  "model_path"      : "out/inceptionv3/imaug_model",
-  "cm_path"         : "out/inceptionv3/imaug_cm.png",
+  "features_path"   : "out/inceptionv3/features.h5",
+  "labels_path"     : "out/inceptionv3/labels.h5",
+  "results"         : "out/inceptionv3/results.txt",
+  "classifier_path" : "out/inceptionv3/classifier.pickle",
+  "model_path"      : "out/inceptionv3/model",
+  "cm_path"         : "out/inceptionv3/cm.png",
 
   "test_size"       : 0.10,
   "seed"            : 2018,

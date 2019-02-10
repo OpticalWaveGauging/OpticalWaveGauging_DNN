@@ -5,12 +5,12 @@
 
   "train_path"      : "train",
   "test_path"       : "test",
-  "features_path"   : "out/xception/imaug_features.h5",
-  "labels_path"     : "out/xception/imaug_labels.h5",
-  "results"         : "out/xception/imaug_results.txt",
-  "classifier_path" : "out/xception/imaug_classifier.pickle",
-  "model_path"      : "out/xception/imaug_model",
-  "cm_path"         : "out/xception/imaug_cm.png",
+  "features_path"   : "out/xception/features.h5",
+  "labels_path"     : "out/xception/labels.h5",
+  "results"         : "out/xception/results.txt",
+  "classifier_path" : "out/xception/classifier.pickle",
+  "model_path"      : "out/xception/model",
+  "cm_path"         : "out/xception/cm.png",
 
   "test_size"       : 0.10,
   "seed"            : 2018,

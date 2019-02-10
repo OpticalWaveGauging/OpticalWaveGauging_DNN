@@ -5,12 +5,12 @@
 
   "train_path"      : "train",
   "test_path"       : "test",
-  "features_path"   : "out/inceptionresnetv2/imaug_features.h5",
-  "labels_path"     : "out/inceptionresnetv2/imaug_labels.h5",
-  "results"         : "out/inceptionresnetv2/imaug_results.txt",
-  "classifier_path" : "out/inceptionresnetv2/imaug_classifier.pickle",
-  "model_path"      : "out/inceptionresnetv2/imaug_model",
-  "cm_path"         : "out/inceptionresnetv2/imaug_cm.png",
+  "features_path"   : "out/inceptionresnetv2/features.h5",
+  "labels_path"     : "out/inceptionresnetv2/labels.h5",
+  "results"         : "out/inceptionresnetv2/results.txt",
+  "classifier_path" : "out/inceptionresnetv2/classifier.pickle",
+  "model_path"      : "out/inceptionresnetv2/model",
+  "cm_path"         : "out/inceptionresnetv2/cm.png",
 
   "test_size"       : 0.10,
   "seed"            : 2018,

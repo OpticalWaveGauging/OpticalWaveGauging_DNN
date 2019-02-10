@@ -1,0 +1,22 @@
+name: regression
+channels:
+  - conda
+  - defaults
+dependencies:  
+  - python
+  - ipython
+  - scikit-learn
+  - numpy
+  - scipy
+  - matplotlib
+  - imageio
+  - h5py
+  - seaborn
+  - opencv
+  - py-opencv
+  - keras
+  - pandas
+  - graphviz
+  - pip
+  - mkl-service
+  - scikit-image
