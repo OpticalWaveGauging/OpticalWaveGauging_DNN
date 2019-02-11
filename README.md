@@ -9,7 +9,7 @@ Software and data for training deep convolutional neural network models to estim
 
 ### Folder structure
 
-* \conda_env contains yml files for setting up conda environments (one each for discrete classification and continuous regression)
+* \conda_env contains yml files for setting up a conda environment
 * \train contains files using for training models 
 
 ### Setting up computing environments
@@ -68,49 +68,93 @@ Each model
 Organize model result files (*.hdf5 format) in the following file structure
 
 im128
+
 ---res_snap
+
 ------100epoch
+
 ---------H
+
 ------------model1
+
 ---------------batch16
+
 ---------------batch32
+
 ---------------batch64
+
 ---------------batch128
+
 ------------model2
+
 ---------------batch16
+
 ---------------batch32
+
 ---------------batch64
+
 ---------------batch128
+
 ------------model3
+
 ---------------batch16
+
 ---------------batch32
+
 ---------------batch64
+
 ---------------batch128
+
 ------------model4
+
 ---------------batch16
+
 ---------------batch32
+
 ---------------batch64
+
 ---------------batch128
+
 ---------T
+
 ------------model1
+
 ---------------batch16
+
 ---------------batch32
+
 ---------------batch64
+
 ---------------batch128
+
 ------------model2
+
 ---------------batch16
+
 ---------------batch32
+
 ---------------batch64
+
 ---------------batch128
+
 ------------model3
+
 ---------------batch16
+
 ---------------batch32
+
 ---------------batch64
+
 ---------------batch128
+
 ------------model4
+
 ---------------batch16
+
 ---------------batch32
+
 ---------------batch64
+
 ---------------batch128
 
 Then run a script to split large model files to smaller files < 100 MB (so they fit on github)
