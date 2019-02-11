@@ -29,12 +29,6 @@ Create a new conda environment called ```regression```
 conda env create -f conda_env/regression.yml
 ```
 
-From the ```keras_mods\regression\keras_applications``` folder, copy ```inception_v3.py``` and ```inceptionresnet_v2.py``` into your ```keras_applications``` folder within your conda environment. For example: 
-
-```C:\Users\user\AppData\Local\Continuum\anaconda3\envs\regression\Lib\site-packages\keras_applications```
-
-Be sure to keep a copy of the existing files there in case something goes wrong.
-
 Activate environment:
 
 ```
@@ -66,4 +60,80 @@ To do the same for wave period:
 ```
 python train_regress_period.py
 ```
+
+## Tidying up
+
+Each model
+
+Organize model result files (*.hdf5 format) in the following file structure
+
+im128
+---res_snap
+------100epoch
+---------H
+------------model1
+---------------batch16
+---------------batch32
+---------------batch64
+---------------batch128
+------------model2
+---------------batch16
+---------------batch32
+---------------batch64
+---------------batch128
+------------model3
+---------------batch16
+---------------batch32
+---------------batch64
+---------------batch128
+------------model4
+---------------batch16
+---------------batch32
+---------------batch64
+---------------batch128
+---------T
+------------model1
+---------------batch16
+---------------batch32
+---------------batch64
+---------------batch128
+------------model2
+---------------batch16
+---------------batch32
+---------------batch64
+---------------batch128
+------------model3
+---------------batch16
+---------------batch32
+---------------batch64
+---------------batch128
+------------model4
+---------------batch16
+---------------batch32
+---------------batch64
+---------------batch128
+
+Then run a script to split large model files to smaller files < 100 MB (so they fit on github)
+
+```
+python split_model4.py
+```
+
+Finally, compile and plot results from all models using
+
+```
+python compile_results.py
+```
+
+(run twice using ```cat = 'H'``` and ```cat = 'T'```)
+
+
+Data are written out to the Matlab format:
+
+IR_all_model_preds_height_128.mat
+
+and
+
+IR_all_model_preds_period_128.mat
+
 
