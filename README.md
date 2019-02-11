@@ -63,8 +63,6 @@ python train_regress_period.py
 
 ## Tidying up
 
-Each model
-
 Organize model result files (*.hdf5 format) in the following file structure
 
 im128
