@@ -5,11 +5,7 @@
 ## daniel.buscombe.nau.edu
 
 import os
-from keras.metrics import mean_absolute_error
 import numpy as np
-
-def mae_metric(in_gt, in_pred):
-    return mean_absolute_error(div*in_gt, div*in_pred)
 
 def gen_from_df(img_data_gen, in_df, path_col, y_col, **dflow_args):
     base_dir = os.path.dirname(in_df[path_col].values[0])

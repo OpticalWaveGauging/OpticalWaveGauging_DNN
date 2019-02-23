@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 import os
 import json
-import time
+import time, datetime
 from glob import glob
 from keras.applications.mobilenet import MobileNet
 from keras.applications.mobilenet_v2 import MobileNetV2
@@ -24,11 +24,17 @@ from keras.applications.inception_resnet_v2 import InceptionResNetV2
 
 from keras.layers import GlobalAveragePooling2D, Dense, Dropout, Flatten, BatchNormalization
 from keras.models import Sequential
-from keras.callbacks import ModelCheckpoint, EarlyStopping, reduceloss_plateau
+from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
 
 from utils import *
+
+from keras.metrics import mean_absolute_error
+
+def mae_metric(in_gt, in_pred):
+    return mean_absolute_error(div*in_gt, div*in_pred)
+
 
 #==============================================================	
 ## script starts here
@@ -44,27 +50,28 @@ if __name__ == '__main__':
 
 	print(config)
 	# config variables
-	imsize    = config["img_size"]
-	num_epochs = config["num_epochs"] ##100
-	test_size = config["test_size"]
-	batch_size = config["batch_size"]
-	height_shift_range = config["height_shift_range"]
-	width_shift_range = config=["width_shift_range"]
-	rotation_range = config["rotation_range"]
+	imsize    = int(config["img_size"])
+	num_epochs = int(config["num_epochs"]) ##100
+	test_size = float(config["test_size"])
+	batch_size = int(config["batch_size"])
+	height_shift_range = float(config["height_shift_range"])
+	width_shift_range = float(config["width_shift_range"])
+	rotation_range = float(config["rotation_range"])
 	samplewise_std_normalization = config["samplewise_std_normalization"]
 	horizontal_flip = config["horizontal_flip"]
 	vertical_flip = config["vertical_flip"]
 	samplewise_center = config["samplewise_center"]
-	shear_range = config["shear_range"]
-	zoom_range = config["zoom_range"]
-	steps_per_epoch = config["steps_per_epoch"]
-	dropout_rate = config["dropout_rate"]
-	epsilon = config["epsilon"]
-	min_lr = conf["min_lr"]
-	factor = conf["factor"]
-	input_image_format = conf["input_image_format"]
-	input_csv_file = conf["input_csv_file"]
-	category = conf["category"] ##'H'
+	shear_range = float(config["shear_range"])
+	zoom_range = float(config["zoom_range"])
+	steps_per_epoch = int(config["steps_per_epoch"])
+	dropout_rate = float(config["dropout_rate"])
+	epsilon = float(config["epsilon"])
+	min_lr = float(config["min_lr"])
+	factor = float(config["factor"])
+	input_image_format = config["input_image_format"]
+	input_csv_file = config["input_csv_file"]
+	category = config["category"] ##'H'
+	fill_mode = config["fill_mode"]
 	
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 	
@@ -82,8 +89,10 @@ if __name__ == '__main__':
 
 			df = pd.read_csv(os.path.join(base_dir, input_csv_file)) ##'training-dataset.csv'))
 																																									 
-			df['path'] = df['id'].map(lambda x: os.path.join(base_dir, 'images', '{}.'+input_image_format.format(x))) ##png													 
-																	 
+			df['path'] = df['id'].map(lambda x: os.path.join(base_dir,
+															     'images',  
+															     '{}.png'.format(x)))	
+																 
 			df['exists'] = df['path'].map(os.path.exists)
 			print(df['exists'].sum(), 'images found of', df.shape[0], 'total')
 
@@ -134,14 +143,14 @@ if __name__ == '__main__':
 										 path_col = 'path',
 										y_col = 'zscore', 
 										target_size = IMG_SIZE,
-										 colour_mode = 'grayscale',
+										 color_mode = 'grayscale',
 										batch_size = batch_size) ##64)
 
 			valid_gen = gen_from_df(im_gen, valid_df, 
 										 path_col = 'path',
 										y_col = 'zscore', 
 										target_size = IMG_SIZE,
-										 colour_mode = 'grayscale',
+										 color_mode = 'grayscale',
 										batch_size = batch_size) ##64) 
 									
 			test_X, test_Y = next(gen_from_df(im_gen, 
@@ -149,7 +158,7 @@ if __name__ == '__main__':
 										 path_col = 'path',
 										y_col = 'zscore', 
 										target_size = IMG_SIZE,
-										 colour_mode = 'grayscale',
+										 color_mode = 'grayscale',
 										batch_size = len(df))) ##1000 
 
 
@@ -166,7 +175,7 @@ if __name__ == '__main__':
 									 save_best_only=True, mode='min', save_weights_only = True)
 
 
-			reduceloss_plat = reduceloss_plateau(monitor='val_loss', factor=factor, patience=10, verbose=1, mode='auto', epsilon=epsilon, cooldown=5, min_lr=min_lr) ##0.0001, 0.8
+			reduceloss_plat = ReduceLROnPlateau(monitor='val_loss', factor=factor, patience=10, verbose=1, mode='auto', epsilon=epsilon, cooldown=5, min_lr=min_lr) ##0.0001, 0.8
 			earlystop = EarlyStopping(monitor="val_loss", mode="min", patience=15) 
 			callbacks_list = [model_checkpoint, earlystop, reduceloss_plat]	
 

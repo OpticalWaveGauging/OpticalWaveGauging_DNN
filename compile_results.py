@@ -35,27 +35,29 @@ if __name__ == '__main__':
 
 	print(config)
 	# config variables
-	imsize    = config["img_size"]
-	num_epochs = config["num_epochs"] ##100
-	test_size = config["test_size"]
-	batch_size = config["batch_size"]
-	height_shift_range = config["height_shift_range"]
-	width_shift_range = config=["width_shift_range"]
-	rotation_range = config["rotation_range"]
+	imsize    = int(config["img_size"])
+	num_epochs = int(config["num_epochs"]) ##100
+	test_size = float(config["test_size"])
+	batch_size = int(config["batch_size"])
+	height_shift_range = float(config["height_shift_range"])
+	width_shift_range = float(config["width_shift_range"])
+	rotation_range = float(config["rotation_range"])
 	samplewise_std_normalization = config["samplewise_std_normalization"]
 	horizontal_flip = config["horizontal_flip"]
 	vertical_flip = config["vertical_flip"]
 	samplewise_center = config["samplewise_center"]
-	shear_range = config["shear_range"]
-	zoom_range = config["zoom_range"]
-	steps_per_epoch = config["steps_per_epoch"]
-	dropout_rate = config["dropout_rate"]
-	epsilon = config["epsilon"]
-	min_lr = conf["min_lr"]
-	factor = conf["factor"]
-	input_image_format = conf["input_image_format"]
-	input_csv_file = conf["input_csv_file"]
-	category = conf["category"] ##'H'
+	shear_range = float(config["shear_range"])
+	zoom_range = float(config["zoom_range"])
+	steps_per_epoch = int(config["steps_per_epoch"])
+	dropout_rate = float(config["dropout_rate"])
+	epsilon = float(config["epsilon"])
+	min_lr = float(config["min_lr"])
+	factor = float(config["factor"])
+	input_image_format = config["input_image_format"]
+	input_csv_file = config["input_csv_file"]
+	category = config["category"] ##'H'
+	fill_mode = config["fill_mode"]
+	
 	
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 
@@ -64,8 +66,10 @@ if __name__ == '__main__':
 
 	df = pd.read_csv(os.path.join(base_dir, input_csv_file)) ##'training-dataset.csv'))
 																																									 
-	df['path'] = df['id'].map(lambda x: os.path.join(base_dir, 'images', '{}.'+input_image_format.format(x))) ##png															 
-															 
+	df['path'] = df['id'].map(lambda x: os.path.join(base_dir,
+													'images',  
+													'{}.png'.format(x)))
+																 
 	df['exists'] = df['path'].map(os.path.exists)
 	print(df['exists'].sum(), 'images found of', df.shape[0], 'total')
 
@@ -116,14 +120,14 @@ if __name__ == '__main__':
 								 path_col = 'path',
 								y_col = 'zscore', 
 								target_size = IMG_SIZE,
-								 colour_mode = 'grayscale',
+								 color_mode = 'grayscale',
 								batch_size = batch_size) ##64)
 
 	valid_gen = gen_from_df(im_gen, valid_df, 
 								 path_col = 'path',
 								y_col = 'zscore', 
 								target_size = IMG_SIZE,
-								 colour_mode = 'grayscale',
+								 color_mode = 'grayscale',
 								batch_size = batch_size) ##64) 
 							
 	test_X, test_Y = next(gen_from_df(im_gen, 
@@ -131,7 +135,7 @@ if __name__ == '__main__':
 								 path_col = 'path',
 								y_col = 'zscore', 
 								target_size = IMG_SIZE,
-								 colour_mode = 'grayscale',
+								 color_mode = 'grayscale',
 								batch_size = len(df))) #1000)) 
 
 

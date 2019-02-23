@@ -13,9 +13,9 @@ with open(os.getcwd()+os.sep+'conf'+os.sep+'config.json') as f:
 
 print(config)
 # config variables
-im_size    = config["img_size"]
-epics = config["num_epochs"] ##100
-data = conf["category"] ##'H'
+im_size    = int(config["img_size"])
+epics = int(config["num_epochs"]) ##100
+data = config["category"] ##'H'
 
 CHUNK_SIZE = int(9.9e+7)
 
