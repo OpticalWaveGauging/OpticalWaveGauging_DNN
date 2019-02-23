@@ -3,7 +3,7 @@
   "samplewise_center"  : true,
   "input_image_format" : "png",
   "input_csv_file"     : "training-dataset.csv",
-  "category"           : 'H',
+  "category"           : "H",
 
   "horizontal_flip"    : false,
   "vertical_flip"      : false,
