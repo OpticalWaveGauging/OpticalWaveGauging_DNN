@@ -4,6 +4,8 @@
 ## Northern Arizona University
 ## daniel.buscombe.nau.edu
 
+## GPU with 10GB memory recommended
+
 import numpy as np 
 import pandas as pd 
 
@@ -51,7 +53,7 @@ if __name__ == '__main__':
 		
 	IMG_SIZE = (128, 128) 
 
-	num_epochs = 100 #20, 50
+	num_epochs = 100
 	
 	base_dir = os.path.normpath(os.getcwd()+os.sep+'train') 
 
@@ -68,7 +70,7 @@ if __name__ == '__main__':
 			df = pd.read_csv(os.path.join(base_dir, 'training-dataset.csv'))
 																																									 
 			df['path'] = df['id'].map(lambda x: os.path.join(base_dir,
-																	 'categorical',  
+																	 'images',  
 																	 '{}.png'.format(x)))														 
 																	 
 			df['exists'] = df['path'].map(os.path.exists)
@@ -157,13 +159,16 @@ if __name__ == '__main__':
 								   metrics = [mae_metric])
 
 			OWG.summary()
-
+			
+			# train the model
 			OWG.fit_generator(train_gen, validation_data = (test_X, test_Y), 
 										  epochs = num_epochs, steps_per_epoch= 100, 
 										  callbacks = callbacks_list)
 
+			# load the new model weights							  
 			OWG.load_weights(weights_path)
 
+			# the model predicts zscores - recover value using pop. mean and standard dev.			
 			pred_Y = div*OWG.predict(test_X, batch_size = train_gen.batch_size, verbose = True)+mean
 			test_Y = div*test_Y+mean
 
