@@ -10,7 +10,6 @@ import os
 import numpy as np 
 import pandas as pd 
 import matplotlib.pyplot as plt 
-from imageio import imread
 from glob import glob
 import shutil
 
@@ -18,7 +17,6 @@ from keras.applications.mobilenet import MobileNet
 from keras.applications.mobilenetv2 import MobileNetV2
 from keras.applications.inception_v3 import InceptionV3
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from keras.utils import plot_model
 
 from keras.layers import GlobalAveragePooling2D, Dense, Dropout, Flatten, BatchNormalization
 from keras.models import Sequential
@@ -26,89 +24,107 @@ from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
 from scipy.io import savemat
 
-from sklearn.metrics import precision_score, \
-    recall_score, confusion_matrix, accuracy_score, f1_score
-
-
-def gen_from_df(img_data_gen, in_df, path_col, y_col, **dflow_args):
-    base_dir = os.path.dirname(in_df[path_col].values[0])
-	
-    df_gen = img_data_gen.flow_from_directory(base_dir, class_mode = 'sparse', **dflow_args)
-									
-    df_gen.filenames = in_df[path_col].values
-	
-    df_gen.classes = np.stack(in_df[y_col].values)
-	
-    df_gen.samples = in_df.shape[0]
-	
-    df_gen.n = in_df.shape[0]
-	
-    df_gen._set_index_array()
-	
-    df_gen.directory = '' 
-    return df_gen	
+from utils import *
 	
 #==============================================================	
 if __name__ == '__main__':	
 
+	# load the user configs
+	with open(os.getcwd()+os.sep+'conf'+os.sep+'config.json') as f:    
+		config = json.load(f)
+
+	print(config)
+	# config variables
+	imsize    = config["img_size"]
+	num_epochs = config["num_epochs"] ##100
+	test_size = config["test_size"]
+	batch_size = config["batch_size"]
+	height_shift_range = config["height_shift_range"]
+	width_shift_range = config=["width_shift_range"]
+	rotation_range = config["rotation_range"]
+	samplewise_std_normalization = config["samplewise_std_normalization"]
+	horizontal_flip = config["horizontal_flip"]
+	vertical_flip = config["vertical_flip"]
+	samplewise_center = config["samplewise_center"]
+	shear_range = config["shear_range"]
+	zoom_range = config["zoom_range"]
+	steps_per_epoch = config["steps_per_epoch"]
+	dropout_rate = config["dropout_rate"]
+	epsilon = config["epsilon"]
+	min_lr = conf["min_lr"]
+	factor = conf["factor"]
+	input_image_format = conf["input_image_format"]
+	input_csv_file = conf["input_csv_file"]
+	category = conf["category"] ##'H'
+	
+	IMG_SIZE = (imsize, imsize) ##(128, 128) 
+
 	base_dir = os.getcwd()+os.sep+'train'
 
-	IMG_SIZE = (128, 128) 
 
-	cat = 'H'
-
-	df = pd.read_csv(os.path.join(base_dir, 'training-dataset.csv'))
-																																							 
-	df['path'] = df['id'].map(lambda x: os.path.join(base_dir,
-															 'categorical',  
-															 '{}.png'.format(x)))														 
+	df = pd.read_csv(os.path.join(base_dir, input_csv_file)) ##'training-dataset.csv'))
+																																									 
+	df['path'] = df['id'].map(lambda x: os.path.join(base_dir, 'images', '{}.'+input_image_format.format(x))) ##png															 
 															 
 	df['exists'] = df['path'].map(os.path.exists)
 	print(df['exists'].sum(), 'images found of', df.shape[0], 'total')
 
-	mean = df['H'].mean() 
-	div = 2*df['H'].std() 
-	df['zscore'] = df['H'].map(lambda x: (x-mean)/div) 
+	if category == 'H':
+		mean = df['H'].mean() 
+		div = 2*df['H'].std() 
+		df['zscore'] = df['H'].map(lambda x: (x-mean)/div)
+	elif category == 'T':
+		mean = df['T'].mean() 
+		div = 2*df['T'].std() 
+		df['zscore'] = df['T'].map(lambda x: (x-mean)/div)			
+	else:
+		print("Unknown category: "+str(category))
+		print("Fix config file, exiting now ...")
+		import sys
+		sys.exit()
+				
 	df.dropna(inplace = True)
-	df.sample(3)
 
-	df['category'] = pd.cut(df['H'], 10)
+	if category == 'H':
+		df['category'] = pd.cut(df['H'], 10)
+	else:
+		df['category'] = pd.cut(df['T'], 8)
 
 	new_df = df.groupby(['category']).apply(lambda x: x.sample(2000, replace = True) 
 														  ).reset_index(drop = True)
 	print('New Data Size:', new_df.shape[0], 'Old Size:', df.shape[0])
 
 	train_df, valid_df = train_test_split(new_df, 
-									   test_size = 0.33, 
+									   test_size = test_size, #0.33, 
 									   random_state = 2018,
 									   stratify = new_df['category'])
 	print('train', train_df.shape[0], 'validation', valid_df.shape[0])
 
 
-	im_gen = ImageDataGenerator(samplewise_center=True, 
-								  samplewise_std_normalization=True, 
-								  horizontal_flip = False, 
-								  vertical_flip = False, 
-								  height_shift_range = 0.1, 
-								  width_shift_range = 0.1, 
-								  rotation_range = 10, 
-								  shear_range = 0.05,
-								  fill_mode = 'reflect', #'nearest',
-								  zoom_range=0.2)
+	im_gen = ImageDataGenerator(samplewise_center=samplewise_center, ##True, 
+								  samplewise_std_normalization=samplewise_std_normalization, ##True, 
+								  horizontal_flip = horizontal_flip, ##False, 
+								  vertical_flip = vertical_flip, ##False, 
+								  height_shift_range = height_shift_range, ##0.1, 
+								  width_shift_range = width_shift_range, ##0.1, 
+								  rotation_range = rotation_range, ##10, 
+								  shear_range = shear_range, ##0.05,
+								  fill_mode = fill_mode, ##'reflect', #'nearest',
+								  zoom_range= zoom_range) ##0.2)
 
 	train_gen = gen_from_df(im_gen, train_df, 
 								 path_col = 'path',
 								y_col = 'zscore', 
 								target_size = IMG_SIZE,
 								 colour_mode = 'grayscale',
-								batch_size = 64)
+								batch_size = batch_size) ##64)
 
 	valid_gen = gen_from_df(im_gen, valid_df, 
 								 path_col = 'path',
 								y_col = 'zscore', 
 								target_size = IMG_SIZE,
 								 colour_mode = 'grayscale',
-								batch_size = 64) 
+								batch_size = batch_size) ##64) 
 							
 	test_X, test_Y = next(gen_from_df(im_gen, 
 								   valid_df, 
@@ -116,7 +132,7 @@ if __name__ == '__main__':
 								y_col = 'zscore', 
 								target_size = IMG_SIZE,
 								 colour_mode = 'grayscale',
-								batch_size = 1000)) 
+								batch_size = len(df))) #1000)) 
 
 
 	t_x, t_y = next(train_gen)
@@ -135,7 +151,7 @@ if __name__ == '__main__':
 	root = os.getcwd()+os.sep+'im128'+os.sep+'res_snap'
 
 
-	for epics in [20, 50, 100]:
+	for epics in [num_epochs]: ##[20, 50, 100]:
 		print("Epoch: "+str(epics))
 		
 		for batch_size in [16,32,64,128]: 
@@ -150,7 +166,7 @@ if __name__ == '__main__':
 				train_gen.batch_size = batch_size
 
 				if arch=='4':
-					if cat=='H':
+					if category=='H':
 						infiles  = sorted(glob(os.path.normpath(root+os.sep+str(epics)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'*.hdf5')))					
 					else:
 						infiles  = sorted(glob(os.path.normpath(root+os.sep+str(epics)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'*.hdf5')))	
@@ -160,28 +176,28 @@ if __name__ == '__main__':
 						data1.write(file3.read())
 					weight_path='mymodel.hdf5'
 				else:
-					if cat=='H':			
+					if category=='H':			
 						weight_path = sorted(glob(os.path.normpath(root+os.sep+str(epics)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'*.hdf5')))[0]	
 					else:
 						weight_path = sorted(glob(os.path.normpath(root+os.sep+str(epics)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'*.hdf5')))[0]
-				base_model = archs[arch](input_shape =  t_x.shape[1:], 
-				include_top = False, 
-				weights = None)	
+						
+				base_model = archs[arch](input_shape =  t_x.shape[1:], include_top = False, weights = None)	
 
 				owg = Sequential()
 				owg.add(BatchNormalization(input_shape = (IMG_SIZE[0], IMG_SIZE[1], 1)))
 				owg.add(base_model)
 				owg.add(BatchNormalization())
 				owg.add(GlobalAveragePooling2D())
-				owg.add(Dropout(0.5))
+				owg.add(Dropout(dropout_rate))
 				owg.add(Dense(1, activation = 'linear' ))  
 				owg.load_weights(weight_path)
 
-				out['yhat_epochs'+str(epics)+'_batchsize'+str(batch_size)+'_model'+arch] = div*owg.predict(test_X, batch_size = 16, verbose = True)+mean
+				out['yhat_epochs'+str(epics)+'_batchsize'+str(batch_size)+'_model'+arch] = div*owg.predict(test_X, batch_size = batch_size, verbose = True)+mean
 				counter+=1
+				os.remove(weight_path)
 
 	E = []			
-	for epics in [20, 50, 100]:
+	for epics in [num_epochs]: ##20, 50, 100]:
 		print(epics)
 		fig, axs = plt.subplots(4, 4)
 		fig.subplots_adjust(hspace=0.5, wspace=0.3)
@@ -216,13 +232,13 @@ if __name__ == '__main__':
 				axs[counter1, counter2].plot(test_Y, test_Y, 'r--', label = 'observed', lw=0.5)
 				if counter1==3:
 				   if counter2==0:
-					  if cat=='H':
+					  if category=='H':
 						axs[counter1, counter2].set_xlabel('Observed H (m)', fontsize=6)
 						axs[counter1, counter2].set_ylabel(r'Estimated H (m)', fontsize=6)				  
 					  else:
 						axs[counter1, counter2].set_xlabel('Observed T (s)', fontsize=6)
 						axs[counter1, counter2].set_ylabel(r'Estimated T (s)', fontsize=6)
-				if cat=='H':
+				if category=='H':
 					string = r'RMS (m): '+str(np.sqrt(np.nanmean((pred_Y - test_Y)**2)))[:4] + '  R$^2$: '+str(np.min(np.corrcoef(test_Y, pred_Y))**2)[:4]
 					axs[counter1, counter2].set_title(letters[counter2]+') '+string, fontsize=4, loc='left')
 					axs[counter1, counter2].set_xlim(0, 3)
@@ -238,7 +254,7 @@ if __name__ == '__main__':
 				counter2 += 1
 				
 			counter1+=1
-		if cat=='H':
+		if category=='H':
 			plt.savefig('IR_H_scatter_all_'+str(epics)+'.png', dpi=300, bbox_inches='tight')	
 		else:
 			plt.savefig('IR_T_scatter_all_'+str(epics)+'.png', dpi=300, bbox_inches='tight')
@@ -250,7 +266,7 @@ if __name__ == '__main__':
 	out['rms_ensemble'] = np.sqrt(np.nanmean((out['pred_Y_ensemble'] - test_Y)**2))
 
 
-	if cat=='H':
+	if category=='H':
 		savemat('IR_all_model_preds_height_'+str(IMG_SIZE[0])+'.mat', out)
 	else:			
 		savemat('IR_all_model_preds_period_'+str(IMG_SIZE[0])+'.mat', out)
