@@ -21,9 +21,9 @@ CHUNK_SIZE = int(9.9e+7)
 
 for batch_size [16,32,64,128]:
     if data=='H':
-		infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res_'+name+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.hdf5'
+		infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.hdf5'
 	elif data=='T':
-		infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res_'+name+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.hdf5'	
+		infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.hdf5'	
 	else:
 		print("Unknown category: "+str(category))
 		print("Fix config file, exiting now ...")

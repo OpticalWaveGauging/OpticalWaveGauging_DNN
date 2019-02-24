@@ -6,6 +6,7 @@
 
 ## GPU with 10GB memory recommended
 
+# import ibraries
 import numpy as np 
 import pandas as pd 
 
@@ -13,6 +14,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
+import zipfile
 import os
 import json
 import time, datetime
@@ -32,6 +34,7 @@ from utils import *
 
 from keras.metrics import mean_absolute_error
 
+# mean absolute error
 def mae_metric(in_gt, in_pred):
     return mean_absolute_error(div*in_gt, div*in_pred)
 
@@ -73,10 +76,40 @@ if __name__ == '__main__':
 	category = config["category"] ##'H'
 	fill_mode = config["fill_mode"]
 	
+	## download files and unzip
+	if input_csv_file=='IR-training-dataset.csv':
+		print('Downloading IR imagery ...')
+		print('... file is ~2GB - takes a while')
+		url = 'https://drive.google.com/file/d/1ljkY4akD8O8ShLyOywTnyQl7GsH3KIJ3/view?usp=sharing'
+		image_dir = 'IR_images'
+		file_id = '1ljkY4akD8O8ShLyOywTnyQl7GsH3KIJ3'
+		destination = 'IR_images.zip'
+		download_file_from_google_drive(file_id, destination)
+		print('download complete ... unzipping')	
+		zip_ref = zipfile.ZipFile(destination, 'r')
+		zip_ref.extractall(os.getcwd()+os.sep+'train')
+		zip_ref.close()
+		os.remove(destination)
+		
+	elif input_csv_file=='nearshore-training-dataset.csv':
+		print('Downloading nearshore imagery ...')
+		print('... file is ~1GB - takes a while')
+		url = 'https://drive.google.com/file/d/1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
+		image_dir = 'nearshore_images'	
+		file_id = '1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
+		destination = 'nearshore_images.zip'
+		download_file_from_google_drive(file_id, destination)	
+		print('download complete ... unzipping')	
+		zip_ref = zipfile.ZipFile(destination, 'r')
+		zip_ref.extractall(os.getcwd()+os.sep+'train')
+		zip_ref.close()
+		os.remove(destination)
+		
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 	
 	base_dir = os.path.normpath(os.getcwd()+os.sep+'train') 
 
+	## loop through 4 different batch sizes
 	for batch_size in [16,32,64,128]: 
 		print ("[INFO] Batch size = "+str(batch_size))
 		
@@ -84,13 +117,14 @@ if __name__ == '__main__':
 
 		counter =1
 
+		## loop through 4 different base models
 		for arch in archs:
 			print(arch)
 
 			df = pd.read_csv(os.path.join(base_dir, input_csv_file)) ##'training-dataset.csv'))
 																																									 
 			df['path'] = df['id'].map(lambda x: os.path.join(base_dir,
-															     'images',  
+															     image_dir,  
 															     '{}.png'.format(x)))	
 																 
 			df['exists'] = df['path'].map(os.path.exists)
@@ -117,8 +151,11 @@ if __name__ == '__main__':
 			else:
 				df['category'] = pd.cut(df['T'], 8)
 
-			new_df = df.groupby(['category']).apply(lambda x: x.sample(2000, replace = True) 
-																  ).reset_index(drop = True)
+			if input_csv_file=='IR-training-dataset.csv':
+				new_df = df.groupby(['category']).apply(lambda x: x.sample(2000, replace = True)).reset_index(drop = True)
+			else:
+				new_df = df.groupby(['category']).apply(lambda x: x.sample(400, replace = True)).reset_index(drop = True)			
+				
 			print('New Data Size:', new_df.shape[0], 'Old Size:', df.shape[0])
 
 			train_df, valid_df = train_test_split(new_df, 
@@ -166,11 +203,17 @@ if __name__ == '__main__':
 		   
 			train_gen.batch_size = batch_size
 
-			if category == 'H':			
-				weights_path="im"+str(IMG_SIZE[0])+"_waveheight_weights_model"+str(counter)+"_"+str(num_epochs)+"epoch_"+str(train_gen.batch_size)+"batch.best.hdf5" 
+			if category == 'H':		
+				if input_csv_file=='IR-training-dataset.csv':			
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.IR.hdf5'
+				else:
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.nearshore.hdf5'			
 			else:
-				weights_path="im"+str(IMG_SIZE[0])+"_waveperiod_weights_model"+str(counter)+"_"+str(num_epochs)+"epoch_"+str(train_gen.batch_size)+"batch.best.hdf5" 			
-
+				if input_csv_file=='IR-training-dataset.csv':						
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.IR.hdf5'	
+				else:
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.nearshore.hdf5'					
+				
 			model_checkpoint = ModelCheckpoint(weights_path, monitor='val_loss', verbose=1, 
 									 save_best_only=True, mode='min', save_weights_only = True)
 
@@ -219,11 +262,17 @@ if __name__ == '__main__':
 			if category == 'H':			
 				ax1.set_xlabel('Actual H (m)')
 				ax1.set_ylabel('Predicted H (m)')
-				plt.savefig('im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch.png', dpi=300, bbox_inches='tight')
+				if input_csv_file=='IR-training-dataset.csv':										
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
+				else:
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 			else:
 				ax1.set_xlabel('Actual T (s)')
 				ax1.set_ylabel('Predicted T (s)')
-				plt.savefig('im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch.png', dpi=300, bbox_inches='tight')
+				if input_csv_file=='IR-training-dataset.csv':										
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
+				else:
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 			
 			plt.close('all')
 
@@ -238,10 +287,16 @@ if __name__ == '__main__':
 			  
 			  c_ax.axis('off')
 
-			if category == 'H':			  
-				fig.savefig('im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch.png', dpi=300, bbox_inches='tight')
+			if category == 'H':	
+				if input_csv_file=='IR-training-dataset.csv':													
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
+				else:
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 			else:
-				fig.savefig('im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch.png', dpi=300, bbox_inches='tight')			
+				if input_csv_file=='IR-training-dataset.csv':													
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
+				else:
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 
 			counter += 1
 

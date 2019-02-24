@@ -22,18 +22,18 @@ conda clean --packages
 conda update -n base conda
 ```
 
-It is strongly recommended that you use a GPU-enabled tensorflow installation for the regression task. CPU training of a model can take several hours to several days (more likely the latter). However, the following instructions are for a CPU install. To use gpu, replace ```tensorflow``` with ```tensorflow-gpu``` in ```conda_env/regression.yml```
+It is strongly recommended that you use a GPU-enabled tensorflow installation. CPU training of a model can take several hours to several days (more likely the latter). However, the following instructions are for a CPU install. To use gpu, replace ```tensorflow``` with ```tensorflow-gpu``` in ```conda_env/owg.yml```
 
-Create a new conda environment called ```regression```
+Create a new conda environment called ```owg```
 
 ```
-conda env create -f conda_env/regression.yml
+conda env create -f conda_env/owg.yml
 ```
 
 Activate environment:
 
 ```
-conda activate regression
+conda activate owg
 ```
 
 Install ```pillow``` using ```pip``` (because the conda version was incompatible with conda-installed ```tensorflow```, at least at time of writing)
@@ -52,7 +52,7 @@ Configuration files are in JSON format, like this:
   "samplewise_std_normalization" : true,
   "samplewise_center"  : true,
   "input_image_format" : "png"
-  "input_csv_file"     : "training-dataset.csv"
+  "input_csv_file"     : "IR-training-dataset.csv"
   "category"           : 'H',
 
   "horizontal_flip"    : false,
@@ -115,11 +115,7 @@ With height_shift_range=2 possible values are integers [-1, 0, +1], same as with
 * brightness_range: Tuple or list of two floats. Range for picking a brightness shift value from.
 * shear_range: Float. Shear Intensity (Shear angle in counter-clockwise direction in degrees)
 * zoom_range: Float or [lower, upper]. Range for random zoom. If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
-* fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}. Default is 'nearest'. Points outside the boundaries of the input are filled according to the given mode:
-'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-'nearest': aaaaaaaa|abcd|dddddddd
-'reflect': abcddcba|abcd|dcbaabcd
-'wrap': abcdabcd|abcd|abcdabcd
+* fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}. 
 * horizontal_flip: Boolean. Randomly flip inputs horizontally.
 * vertical_flip: Boolean. Randomly flip inputs vertically.
 
@@ -139,7 +135,7 @@ Organize model result files (*.hdf5 format) in the following file structure
 
 im128
 
----res_snap
+---res
 
 ------100epoch
 
@@ -239,14 +235,17 @@ Finally, compile and plot results from all models using
 python compile_results.py
 ```
 
-Data are written out to the Matlab format:
+Data are written out to the Matlab format. For example, for the IR imagery wave height model, the mat file would be:
 
+```
 IR_all_model_preds_height_128.mat
+```
 
-and
+and for the IR imagery wave period model, the mat file would be:
 
+```
 IR_all_model_preds_period_128.mat
-
+```
 
 Deactivate environment when finished:
 

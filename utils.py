@@ -6,6 +6,7 @@
 
 import os
 import numpy as np
+import requests
 
 def gen_from_df(img_data_gen, in_df, path_col, y_col, **dflow_args):
     base_dir = os.path.dirname(in_df[path_col].values[0])
@@ -24,3 +25,33 @@ def gen_from_df(img_data_gen, in_df, path_col, y_col, **dflow_args):
 	
     df_gen.directory = '' 
     return df_gen	
+	
+
+def download_file_from_google_drive(id, destination):
+    URL = "https://docs.google.com/uc?export=download"
+
+    session = requests.Session()
+
+    response = session.get(URL, params = { 'id' : id }, stream = True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = { 'id' : id, 'confirm' : token }
+        response = session.get(URL, params = params, stream = True)
+
+    save_response_content(response, destination)    
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+
+    return None
+
+def save_response_content(response, destination):
+    CHUNK_SIZE = 32768
+
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk: # filter out keep-alive new chunks
+                f.write(chunk)	

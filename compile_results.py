@@ -58,7 +58,13 @@ if __name__ == '__main__':
 	category = config["category"] ##'H'
 	fill_mode = config["fill_mode"]
 	
-	
+	if input_csv_file=='IR-training-dataset.csv':
+		image_dir = 'IR_images'
+		
+	elif input_csv_file=='nearshore-training-dataset.csv':
+		image_dir = 'nearshore_images'	
+
+		
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 
 	base_dir = os.getcwd()+os.sep+'train'
@@ -67,7 +73,7 @@ if __name__ == '__main__':
 	df = pd.read_csv(os.path.join(base_dir, input_csv_file)) ##'training-dataset.csv'))
 																																									 
 	df['path'] = df['id'].map(lambda x: os.path.join(base_dir,
-													'images',  
+													image_dir,  
 													'{}.png'.format(x)))
 																 
 	df['exists'] = df['path'].map(os.path.exists)
@@ -94,8 +100,12 @@ if __name__ == '__main__':
 	else:
 		df['category'] = pd.cut(df['T'], 8)
 
-	new_df = df.groupby(['category']).apply(lambda x: x.sample(2000, replace = True) 
-														  ).reset_index(drop = True)
+
+	if input_csv_file=='IR-training-dataset.csv':
+		new_df = df.groupby(['category']).apply(lambda x: x.sample(2000, replace = True)).reset_index(drop = True)
+	else:
+		new_df = df.groupby(['category']).apply(lambda x: x.sample(400, replace = True)).reset_index(drop = True)			
+															  
 	print('New Data Size:', new_df.shape[0], 'Old Size:', df.shape[0])
 
 	train_df, valid_df = train_test_split(new_df, 
