@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt 
 from glob import glob
 import shutil
-
+import json
 from keras.applications.mobilenet import MobileNet
 from keras.applications.mobilenetv2 import MobileNetV2
 from keras.applications.inception_v3 import InceptionV3
@@ -157,12 +157,12 @@ if __name__ == '__main__':
 	out['div'] = div
 	out['text_X'] = test_X
 	out['text_Y'] = test_Y
-	out['df_T'] = df['waveperiod']
-	out['df_H'] = df['waveheight']
+	out['df_T'] = df['T']
+	out['df_H'] = df['H']
 	out['df_zscore'] = df['zscore']
 	out['df_category'] = [] 
 
-	root = os.getcwd()+os.sep+'im128'+os.sep+'res_snap'
+	root = os.getcwd()+os.sep+'im128'+os.sep+'res'
 
 
 	for epics in [num_epochs]: ##[20, 50, 100]:
@@ -208,7 +208,6 @@ if __name__ == '__main__':
 
 				out['yhat_epochs'+str(epics)+'_batchsize'+str(batch_size)+'_model'+arch] = div*owg.predict(test_X, batch_size = batch_size, verbose = True)+mean
 				counter+=1
-				os.remove(weight_path)
 
 	E = []			
 	for epics in [num_epochs]: ##20, 50, 100]:
@@ -246,12 +245,12 @@ if __name__ == '__main__':
 				axs[counter1, counter2].plot(test_Y, test_Y, 'r--', label = 'observed', lw=0.5)
 				if counter1==3:
 				   if counter2==0:
-					  if category=='H':
-						axs[counter1, counter2].set_xlabel('Observed H (m)', fontsize=6)
-						axs[counter1, counter2].set_ylabel(r'Estimated H (m)', fontsize=6)				  
-					  else:
-						axs[counter1, counter2].set_xlabel('Observed T (s)', fontsize=6)
-						axs[counter1, counter2].set_ylabel(r'Estimated T (s)', fontsize=6)
+				      if category=='H':
+				         axs[counter1, counter2].set_xlabel('Observed H (m)', fontsize=6)
+				         axs[counter1, counter2].set_ylabel(r'Estimated H (m)', fontsize=6)				  
+				      else:
+				         axs[counter1, counter2].set_xlabel('Observed T (s)', fontsize=6)
+				         axs[counter1, counter2].set_ylabel(r'Estimated T (s)', fontsize=6)
 				if category=='H':
 					string = r'RMS (m): '+str(np.sqrt(np.nanmean((pred_Y - test_Y)**2)))[:4] + '  R$^2$: '+str(np.min(np.corrcoef(test_Y, pred_Y))**2)[:4]
 					axs[counter1, counter2].set_title(letters[counter2]+') '+string, fontsize=4, loc='left')

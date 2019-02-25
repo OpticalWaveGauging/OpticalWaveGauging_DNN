@@ -11,24 +11,30 @@ import json
 with open(os.getcwd()+os.sep+'conf'+os.sep+'config.json') as f:    
 	config = json.load(f)
 
-print(config)
 # config variables
 im_size    = int(config["img_size"])
 epics = int(config["num_epochs"]) ##100
 data = config["category"] ##'H'
+input_csv_file = config["input_csv_file"]
 
 CHUNK_SIZE = int(9.9e+7)
 
-for batch_size [16,32,64,128]:
+for batch_size in [16,32,64,128]:
     if data=='H':
-		infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.hdf5'
-	elif data=='T':
-		infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.hdf5'	
-	else:
-		print("Unknown category: "+str(category))
-		print("Fix config file, exiting now ...")
-		import sys
-		sys.exit()
+       if input_csv_file=='IR-training-dataset.csv':
+          infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.IR.hdf5'
+       else:
+          infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.nearshore.hdf5'	   
+    elif data=='T':
+       if input_csv_file=='IR-training-dataset.csv':	
+          infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.IR.hdf5'	
+       else:
+          infile = os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(epics)+'epoch'+os.sep+data+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.nearshore.hdf5'		   
+    else:
+       print("Unknown category: "+str(category))
+       print("Fix config file, exiting now ...")
+       import sys
+       sys.exit()
 	
     file_number = 1
     with open(infile, 'rb') as f:
@@ -39,3 +45,5 @@ for batch_size [16,32,64,128]:
              chunk_file.write(chunk)
              file_number += 1
              chunk = f.read(CHUNK_SIZE)
+			 
+    os.remove(infile)

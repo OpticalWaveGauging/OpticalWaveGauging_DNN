@@ -4,9 +4,9 @@
 ## Northern Arizona University
 ## daniel.buscombe.nau.edu
 
-## GPU with 10GB memory recommended
+## GPU with 8+GB memory recommended
 
-# import ibraries
+# import libraries
 import numpy as np 
 import pandas as pd 
 
@@ -114,11 +114,14 @@ if __name__ == '__main__':
 		print ("[INFO] Batch size = "+str(batch_size))
 		
 		archs = {'1':MobileNet, '2':MobileNetV2, '3':InceptionV3, '4':InceptionResNetV2}
-
-		counter =1
+		counter =1	
 
 		## loop through 4 different base models
 		for arch in archs:
+			print("==========================================================")
+			print("==========================================================")
+			print("==========================================================")
+
 			print(arch)
 
 			df = pd.read_csv(os.path.join(base_dir, input_csv_file)) ##'training-dataset.csv'))
@@ -205,14 +208,14 @@ if __name__ == '__main__':
 
 			if category == 'H':		
 				if input_csv_file=='IR-training-dataset.csv':			
-					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.IR.hdf5'
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.IR.hdf5'
 				else:
-					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model4_'+str(batch_size)+'batch.best.nearshore.hdf5'			
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.nearshore.hdf5'			
 			else:
 				if input_csv_file=='IR-training-dataset.csv':						
-					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.IR.hdf5'	
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.IR.hdf5'	
 				else:
-					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model4_'+str(batch_size)+'batch.best.nearshore.hdf5'					
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.nearshore.hdf5'					
 				
 			model_checkpoint = ModelCheckpoint(weights_path, monitor='val_loss', verbose=1, 
 									 save_best_only=True, mode='min', save_weights_only = True)
@@ -263,16 +266,16 @@ if __name__ == '__main__':
 				ax1.set_xlabel('Actual H (m)')
 				ax1.set_ylabel('Predicted H (m)')
 				if input_csv_file=='IR-training-dataset.csv':										
-					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
 				else:
-					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 			else:
 				ax1.set_xlabel('Actual T (s)')
 				ax1.set_ylabel('Predicted T (s)')
 				if input_csv_file=='IR-training-dataset.csv':										
-					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
 				else:
-					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 			
 			plt.close('all')
 
@@ -289,14 +292,14 @@ if __name__ == '__main__':
 
 			if category == 'H':	
 				if input_csv_file=='IR-training-dataset.csv':													
-					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
 				else:
-					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 			else:
 				if input_csv_file=='IR-training-dataset.csv':													
-					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
 				else:
-					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model4'+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(train_gen.batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 
 			counter += 1
 

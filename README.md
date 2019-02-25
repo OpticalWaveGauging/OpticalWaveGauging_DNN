@@ -1,28 +1,44 @@
-### About
+## About
 
-Data and code to implement Buscombe et al (2019) optical wave gauging using deep neural networks, detailed in the paper
+Data and code to implement Buscombe et al (2019) optical wave gauging (OWG) using deep neural networks, detailed in the paper:
 
 > Buscombe, Carini, Harrison, Chickadel, and Warrick (in review) Optical wave gauging with deep neural networks. Submitted to Coastal Engineering 
 
 
-Software and data for training deep convolutional neural network models to estimate wave height and wave period from the same imagery
+Software and data for training deep convolutional neural network models to estimate wave height and wave period from surf zone imagery
 
 ### Folder structure
 
 * \conda_env contains yml files for setting up a conda environment
 * \conf contains the configuration file with user-definable settings
 * \train contains files using for training models 
+* \im128 is a file structure that will contain results from model training
 
-### Setting up computing environments
+## Setting up computing environments
 
-First, some conda housekeeping
+### Install Anaconda pyton distribution
+
+Install the latest version of Anaconda (https://www.anaconda.com/distribution/)
+
+When installed, open an anaconda command prompt
+
+### Get this github repository
+
+Use git to clone the github directory
+
+``
+git clone git@github.com:dbuscombe-usgs/OpticalWaveGauging_DNN.git
+```
+
+navigate to the ```OpticalWaveGauging_DNN``` directory
 
 ```
-conda clean --packages
-conda update -n base conda
+cd OpticalWaveGauging_DNN
 ```
 
 It is strongly recommended that you use a GPU-enabled tensorflow installation. CPU training of a model can take several hours to several days (more likely the latter). However, the following instructions are for a CPU install. To use gpu, replace ```tensorflow``` with ```tensorflow-gpu``` in ```conda_env/owg.yml```
+
+### Create a conda virtual environment
 
 Create a new conda environment called ```owg```
 
@@ -30,17 +46,45 @@ Create a new conda environment called ```owg```
 conda env create -f conda_env/owg.yml
 ```
 
-Activate environment:
+This takes a few minutes. When it is done, activate environment:
 
 ```
 conda activate owg
 ```
 
-Install ```pillow``` using ```pip``` (because the conda version was incompatible with conda-installed ```tensorflow```, at least at time of writing)
+### Keras source code modifications
+
+1. go to the keras_applications folder. On Windows anaconda builds this is typically located here:
+
+```C:\Users\yourusername\AppData\Local\Continuum\anaconda3\envs\owg\Lib\site-packages\keras_applications```
+
+
+2. Zip up all the .py files. Call the zipped file 'orig.zip'. Delete the .py files.
+
+3. Then copy the .py files in conda_env\keras_applications to this directory
+
+
+Finally, add the following code to the ```_init_.py``` file in the keras\applications folder. 
 
 ```
-pip install pillow
-```
+def keras_modules_injection(base_fun):
+
+    def wrapper(*args, **kwargs):
+        if hasattr(keras_applications, 'get_submodules_from_kwargs'):
+            kwargs['backend'] = backend
+            kwargs['layers'] = layers
+            kwargs['models'] = models
+            kwargs['utils'] = utils
+        return base_fun(*args, **kwargs)
+
+    return wrapper
+```	
+
+(if it is not already there)
+
+On Windows anaconda builds this is typically located here:
+
+```C:\Users\yourusername\AppData\Local\Continuum\anaconda3\envs\owg\Lib\site-packages\keras\applications```
 
 
 ## Setting up the model 
@@ -131,7 +175,7 @@ To train OWGs for wave period, change the category in the config file to 'T' and
 
 ## Tidying up
 
-Organize model result files (*.hdf5 format) in the following file structure
+Model result files (*.hdf5 format) are organized in the following file structure
 
 im128
 
