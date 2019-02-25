@@ -26,7 +26,7 @@ When installed, open an anaconda command prompt
 
 Use git to clone the github directory
 
-``
+```
 git clone git@github.com:dbuscombe-usgs/OpticalWaveGauging_DNN.git
 ```
 
