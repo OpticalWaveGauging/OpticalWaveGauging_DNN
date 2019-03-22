@@ -1,8 +1,8 @@
 {
   "samplewise_std_normalization" : true,
   "samplewise_center"  : true,
-  "input_image_format" : "png",
-  "input_csv_file"     : "nearshore-training-dataset.csv", 
+  "input_image_format" : "jpg",
+  "input_csv_file"     : "snap-training-dataset.csv", 
   "category"           : "H",
 
   "horizontal_flip"    : false,
@@ -16,7 +16,7 @@
   
   "batch_size"         : 64,
   "img_size"           : 128,
-  "num_epochs"         : 100,
+  "num_epochs"         : 4,
   "test_size"          : 0.25,
   "steps_per_epoch"    : 100,
   "dropout_rate"       : 0.5,

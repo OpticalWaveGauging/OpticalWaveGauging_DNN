@@ -76,39 +76,41 @@ if __name__ == '__main__':
 	category = config["category"] ##'H'
 	fill_mode = config["fill_mode"]
 	
+	base_dir = os.path.normpath(os.getcwd()+os.sep+'train') 
+	
 	## download files and unzip
 	if input_csv_file=='IR-training-dataset.csv':
 		print('Downloading IR imagery ...')
 		print('... file is ~2GB - takes a while')
 		url = 'https://drive.google.com/file/d/1ljkY4akD8O8ShLyOywTnyQl7GsH3KIJ3/view?usp=sharing'
 		image_dir = 'IR_images'
-		file_id = '1ljkY4akD8O8ShLyOywTnyQl7GsH3KIJ3'
-		destination = 'IR_images.zip'
-		download_file_from_google_drive(file_id, destination)
-		print('download complete ... unzipping')	
-		zip_ref = zipfile.ZipFile(destination, 'r')
-		zip_ref.extractall(os.getcwd()+os.sep+'train')
-		zip_ref.close()
-		os.remove(destination)
+		if not os.path.isdir(os.path.join(base_dir,image_dir)):
+			file_id = '1ljkY4akD8O8ShLyOywTnyQl7GsH3KIJ3'
+			destination = 'IR_images.zip'
+			download_file_from_google_drive(file_id, destination)
+			print('download complete ... unzipping')	
+			zip_ref = zipfile.ZipFile(destination, 'r')
+			zip_ref.extractall(os.getcwd()+os.sep+'train')
+			zip_ref.close()
+			os.remove(destination)
 		
-	elif input_csv_file=='nearshore-training-dataset.csv':
+	else: #if input_csv_file=='nearshore-training-dataset.csv':
 		print('Downloading nearshore imagery ...')
 		print('... file is ~1GB - takes a while')
 		url = 'https://drive.google.com/file/d/1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
-		image_dir = 'nearshore_images'	
-		file_id = '1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
-		destination = 'nearshore_images.zip'
-		download_file_from_google_drive(file_id, destination)	
-		print('download complete ... unzipping')	
-		zip_ref = zipfile.ZipFile(destination, 'r')
-		zip_ref.extractall(os.getcwd()+os.sep+'train')
-		zip_ref.close()
-		os.remove(destination)
+		image_dir = 'nearshore_images'
+		if not os.path.isdir(os.path.join(base_dir,image_dir)):
+			file_id = '1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
+			destination = 'nearshore_images.zip'
+			download_file_from_google_drive(file_id, destination)	
+			print('download complete ... unzipping')	
+			zip_ref = zipfile.ZipFile(destination, 'r')
+			zip_ref.extractall(os.getcwd()+os.sep+'train')
+			zip_ref.close()
+			os.remove(destination)
 		
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 	
-	base_dir = os.path.normpath(os.getcwd()+os.sep+'train') 
-
 	## loop through 4 different batch sizes
 	for batch_size in [16,32,64,128]: 
 		print ("[INFO] Batch size = "+str(batch_size))
@@ -128,18 +130,18 @@ if __name__ == '__main__':
 																																									 
 			df['path'] = df['id'].map(lambda x: os.path.join(base_dir,
 															     image_dir,  
-															     '{}.png'.format(x)))	
+															     '{}'.format(x)))	
 																 
 			df['exists'] = df['path'].map(os.path.exists)
 			print(df['exists'].sum(), 'images found of', df.shape[0], 'total')
 
 			if category == 'H':
 				mean = df['H'].mean() 
-				div = 2*df['H'].std() 
+				div = df['H'].std() 
 				df['zscore'] = df['H'].map(lambda x: (x-mean)/div)
 			elif category == 'T':
 				mean = df['T'].mean() 
-				div = 2*df['T'].std() 
+				div = df['T'].std() 
 				df['zscore'] = df['T'].map(lambda x: (x-mean)/div)			
 			else:
 				print("Unknown category: "+str(category))
@@ -243,7 +245,7 @@ if __name__ == '__main__':
 			OWG.summary()
 			
 			# train the model
-			OWG.fit_generator(train_gen, validation_data = (test_X, test_Y), 
+			history = OWG.fit_generator(train_gen, validation_data = (test_X, test_Y), 
 										  epochs = num_epochs, steps_per_epoch= steps_per_epoch, ##100, 
 										  callbacks = callbacks_list)
 
@@ -251,6 +253,9 @@ if __name__ == '__main__':
 			OWG.load_weights(weights_path)
 
 			print ("[INFO] Testing optical wave gauge")
+
+			print("Mean: "+str(mean))
+			print("Stdev: "+str(div))
 			
 			# the model predicts zscores - recover value using pop. mean and standard dev.			
 			pred_Y = div*OWG.predict(test_X, batch_size = train_gen.batch_size, verbose = True)+mean
@@ -279,6 +284,30 @@ if __name__ == '__main__':
 			
 			plt.close('all')
 
+			# list all data in history
+			print(history.history.keys())
+			
+			plt.subplot(121)
+			# summarize history for accuracy
+			plt.plot(history.history['mae_metric'])
+			plt.plot(history.history['val_mae_metric'])
+			plt.ylabel('Mean absolute error')
+			plt.xlabel('Epoch')
+			plt.legend(['train', 'test'], loc='upper left')
+			
+			plt.subplot(122)
+			# summarize history for loss
+			plt.plot(history.history['loss'])
+			plt.plot(history.history['val_loss'])
+			#plt.title('model loss')
+			plt.ylabel('Loss')
+			plt.xlabel('Epoch')
+			plt.legend(['train', 'test'], loc='upper left')
+			
+			plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_'+category+'_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'_loss_acc_curves.png', dpi=300, bbox_inches='tight')		
+			plt.close('all')			
+			
+			
 			rand_idx = np.random.choice(range(test_X.shape[0]), 9)
 			fig, m_axs = plt.subplots(3, 3, figsize = (16, 32))
 			for (idx, c_ax) in zip(rand_idx, m_axs.flatten()):

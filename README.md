@@ -7,6 +7,11 @@ Data and code to implement Buscombe et al (2019) optical wave gauging (OWG) usin
 
 Software and data for training deep convolutional neural network models to estimate wave height and wave period from surf zone imagery
 
+This software was tested on Windows 10 with python 3.6, tensorflow 1.11.0 and keras 2.2.4. This software was written by Dr Daniel Buscombe at Northern Arizona University, in the winter of 2018/19.
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IF YOU ENCOUNTER A PROBLEM/BUG OR HAVE A QUESTION OR SUGGESTION, PLEASE USE THE "ISSUES" TAB ON GITHUB. OTHERWISE, THIS SOFTWARE IS UNSUPPORTED.
+
+
 ### Folder structure
 
 * \conda_env contains yml files for setting up a conda environment
@@ -27,7 +32,7 @@ When installed, open an anaconda command prompt
 Use git to clone the github directory
 
 ```
-git clone git@github.com:dbuscombe-usgs/OpticalWaveGauging_DNN.git
+git clone --depth 1 git@github.com:dbuscombe-usgs/OpticalWaveGauging_DNN.git
 ```
 
 navigate to the ```OpticalWaveGauging_DNN``` directory
@@ -37,6 +42,17 @@ cd OpticalWaveGauging_DNN
 ```
 
 It is strongly recommended that you use a GPU-enabled tensorflow installation. CPU training of a model can take several hours to several days (more likely the latter). However, the following instructions are for a CPU install. To use gpu, replace ```tensorflow``` with ```tensorflow-gpu``` in ```conda_env/owg.yml```
+
+
+First, if you are a regular conda user, I would recommend some conda housekeeping (this might take a while):
+
+```
+conda clean --packages
+conda update -n base conda
+```
+
+Otherwise (i.e. this is a fresh conda install), no housekeeping required.
+
 
 ### Create a conda virtual environment
 
@@ -64,7 +80,10 @@ conda activate owg
 3. Then copy the .py files in conda_env\keras_applications to this directory
 
 
-Finally, add the following code to the ```_init_.py``` file in the keras\applications folder. 
+Finally, (if it is not already there) add the following code to the ```_init_.py``` file in the keras\applications folder, which is typically located here:
+
+```C:\Users\yourusername\AppData\Local\Continuum\anaconda3\envs\owg\Lib\site-packages\keras\applications```
+
 
 ```
 def keras_modules_injection(base_fun):
@@ -80,7 +99,7 @@ def keras_modules_injection(base_fun):
     return wrapper
 ```	
 
-(if it is not already there)
+
 
 On Windows anaconda builds this is typically located here:
 
