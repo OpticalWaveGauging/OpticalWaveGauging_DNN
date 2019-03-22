@@ -93,7 +93,7 @@ if __name__ == '__main__':
 			zip_ref.close()
 			os.remove(destination)
 		
-	else: #if input_csv_file=='nearshore-training-dataset.csv':
+	elif input_csv_file=='nearshore-training-dataset.csv':
 		print('Downloading nearshore imagery ...')
 		print('... file is ~1GB - takes a while')
 		url = 'https://drive.google.com/file/d/1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
@@ -108,6 +108,20 @@ if __name__ == '__main__':
 			zip_ref.close()
 			os.remove(destination)
 
+	else: #if input_csv_file=='snap-training-dataset.csv':
+		print('Downloading snap imagery ...')
+		print('... file is ~0.25GB - takes a while')
+		url = 'https://drive.google.com/file/d/1doMgNxcYf0tm1SMigl5Dc5aZWEvFNrM4/view?usp=sharing'
+		image_dir = 'snap_images'
+		if not os.path.isdir(os.path.join(base_dir,image_dir)):
+			file_id = '1doMgNxcYf0tm1SMigl5Dc5aZWEvFNrM4'
+			destination = 'snap_images.zip'
+			download_file_from_google_drive(file_id, destination)	
+			print('download complete ... unzipping')	
+			zip_ref = zipfile.ZipFile(destination, 'r')
+			zip_ref.extractall(os.getcwd()+os.sep+'train')
+			zip_ref.close()
+			os.remove(destination)			
 		
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 
