@@ -198,7 +198,7 @@ python train_OWG_gen.py
 
 Both scripts provide comparable results and are provided to illustrate two different options for training, mostly for advanced users wishing to modify and adapt the code for other purposes. 
 
-You may notice ```python train_OWG_nogen.py``` is marginally faster
+You may notice ```python train_OWG.py``` is marginally faster
 
 The best models are obtained using larger numbers of epochs (say, 100+), but you'll probably want to train them on a GPU (install ```tensorflow-gpu``` instead of ```tensorflow```).
 
@@ -366,6 +366,8 @@ python predict_image.py -i train/snap_images/1516401000.cx.snap.jpg
 
 The following variables are also read from the conf/config_test.json file: ```weights_path```, ```im_size```, ```category```, ```samplewise_std_normalization``` and ```samplewise_center```. These should be the same as used in model training
 
+
+## Wrapping up
 
 Deactivate environment when finished:
 
