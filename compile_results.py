@@ -85,7 +85,7 @@ if __name__ == '__main__':
 		df['zscore'] = df['H'].map(lambda x: (x-mean)/div)
 	elif category == 'T':
 		mean = df['T'].mean() 
-		div = 2*df['T'].std() 
+		div = df['T'].std() 
 		df['zscore'] = df['T'].map(lambda x: (x-mean)/div)			
 	else:
 		print("Unknown category: "+str(category))

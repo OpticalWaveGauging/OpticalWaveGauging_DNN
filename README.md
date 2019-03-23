@@ -184,11 +184,23 @@ With height_shift_range=2 possible values are integers [-1, 0, +1], same as with
 
 ## Training models
 
-To train models to predict wave height, the following script will do so for all combinations of 4 models (MobileNetV1, MobileNetV2, InceptionV3, and InceptionResnet2), and 4 batch sizes (16, 32, 64, and 128 images). Better models are obtained using 100 epochs, but you'll probably want to train them on a GPU (install ```tensorflow-gpu``` instead of ```tensorflow```).
+To train models to predict wave height, the following scripts will do so for all combinations of 4 models (MobileNetV1, MobileNetV2, InceptionV3, and InceptionResnet2), and 4 batch sizes (16, 32, 64, and 128 images). 
 
 ```
 python train_OWG.py
 ```
+
+The following script does the same using generator functions in the training
+
+```
+python train_OWG_gen.py
+```
+
+Both scripts provide comparable results and are provided to illustrate two different options for training, mostly for advanced users wishing to modify and adapt the code for other purposes. 
+
+You may notice ```python train_OWG_nogen.py``` is marginally faster
+
+The best models are obtained using larger numbers of epochs (say, 100+), but you'll probably want to train them on a GPU (install ```tensorflow-gpu``` instead of ```tensorflow```).
 
 To train OWGs for wave period, change the category in the config file to 'T' and run the above again
 
@@ -309,6 +321,51 @@ and for the IR imagery wave period model, the mat file would be:
 ```
 IR_all_model_preds_period_128.mat
 ```
+
+## Operational Mode
+
+### Testing model on a folder of images
+
+```
+python test_OWG_folder.py
+```
+
+This program will read the configuration file, conf/config_test.json
+
+This file should be set up with the following information:
+
+```
+{
+  "samplewise_std_normalization" : true,
+  "samplewise_center"  : true,
+  "weights_path" : "im128/res/100epoch/H/model1/batch16/waveheight_weights_model1_16batch.best.nearshore.hdf5",
+  "input_csv_file"     : "train/snap-training-dataset.csv", 
+  "category"           : "H",
+  "im_size"            : 128,
+  "image_direc"        : "train/snap_images"
+}
+
+```
+
+where the ```image_direc``` is the folder where the test set of images are; ```weights_path``` is the hdf5 file associated with the model you wish to use; and ```input_csv_file``` should be a comma delimited file like the one used to train with.
+
+The other variables, ```im_size```, ```category```, ```samplewise_std_normalization``` and ```samplewise_center``` are the same as used in model training
+
+
+### Testing model on a single image
+
+```
+python predict_image.py -i path/to/image/file.ext
+```
+
+for example:
+
+```
+python predict_image.py -i train/snap_images/1516401000.cx.snap.jpg
+```
+
+The following variables are also read from the conf/config_test.json file: ```weights_path```, ```im_size```, ```category```, ```samplewise_std_normalization``` and ```samplewise_center```. These should be the same as used in model training
+
 
 Deactivate environment when finished:
 
