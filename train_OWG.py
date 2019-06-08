@@ -15,12 +15,17 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 import zipfile
-import os
+import sys, getopt, os
 import json
 import time, datetime
 from glob import glob
 from keras.applications.mobilenet import MobileNet
-from keras.applications.mobilenet_v2 import MobileNetV2
+
+try:
+   from keras.applications.mobilenet_v2 import MobileNetV2
+except:
+   from keras.applications.mobilenetv2 import MobileNetV2
+
 from keras.applications.inception_v3 import InceptionV3
 from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
 
@@ -33,6 +38,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from utils import *
 
 from keras.metrics import mean_absolute_error
+from scipy.io import savemat
 
 ## mean absolute error
 #def mae_metric(in_gt, in_pred):
@@ -50,17 +56,34 @@ if __name__ == '__main__':
 	# start time
 	print ("start time - {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")))
 	start = time.time()
+	argv = sys.argv[1:]
+	try:
+	   opts, args = getopt.getopt(argv,"h:c:")
+	except getopt.GetoptError:
+	   print('python train_OWG.py -c configfile.json')
+	   sys.exit(2)
+	for opt, arg in opts:
+	   if opt == '-h':
+	      print('Example usage: python3 train_OWG.py -c conf_IR_h.json')
+	      sys.exit()
+	   elif opt in ("-c"):
+	      configfile = arg
 	
 	# load the user configs
-	with open(os.getcwd()+os.sep+'conf'+os.sep+'config.json') as f:    
+	with open(os.getcwd()+os.sep+'config'+os.sep+configfile) as f:    
 		config = json.load(f)
+
+	# start time
+	print ("start time - {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")))
+	start = time.time()
+	
 
 	print(config)
 	# config variables
 	imsize    = int(config["img_size"])
 	num_epochs = int(config["num_epochs"]) ##100
 	test_size = float(config["test_size"])
-	batch_size = int(config["batch_size"])
+	#batch_size = int(config["batch_size"])
 	height_shift_range = float(config["height_shift_range"])
 	width_shift_range = float(config["width_shift_range"])
 	rotation_range = float(config["rotation_range"])
@@ -70,7 +93,7 @@ if __name__ == '__main__':
 	samplewise_center = config["samplewise_center"]
 	shear_range = float(config["shear_range"])
 	zoom_range = float(config["zoom_range"])
-	steps_per_epoch = int(config["steps_per_epoch"])
+	#steps_per_epoch = int(config["steps_per_epoch"])
 	dropout_rate = float(config["dropout_rate"])
 	epsilon = float(config["epsilon"])
 	min_lr = float(config["min_lr"])
@@ -79,7 +102,9 @@ if __name__ == '__main__':
 	input_csv_file = config["input_csv_file"]
 	category = config["category"] ##'H'
 	fill_mode = config["fill_mode"]
-
+	prc_lower_withheld = config['prc_lower_withheld'] 
+	prc_upper_withheld = config['prc_upper_withheld'] 
+	 
 	base_dir = os.path.normpath(os.getcwd()+os.sep+'train') 
 	
 	## download files and unzip
@@ -98,14 +123,15 @@ if __name__ == '__main__':
 			zip_ref.close()
 			os.remove(destination)
 		
-	elif input_csv_file=='nearshore-training-dataset.csv':
+	elif input_csv_file=='snap-training-dataset.csv':
 		print('Downloading nearshore imagery ...')
 		print('... file is ~1GB - takes a while')
-		url = 'https://drive.google.com/file/d/1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
-		image_dir = 'nearshore_images'
+		#url = 'https://drive.google.com/file/d/1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
+		url = 'https://drive.google.com/file/d/1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx/view?usp=sharing'
+		image_dir = 'snap_images'
 		if not os.path.isdir(os.path.join(base_dir,image_dir)):
-			file_id = '1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
-			destination = 'nearshore_images.zip'
+			file_id = '1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx' #'1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
+			destination = 'snap_images.zip'
 			download_file_from_google_drive(file_id, destination)	
 			print('download complete ... unzipping')	
 			zip_ref = zipfile.ZipFile(destination, 'r')
@@ -113,30 +139,33 @@ if __name__ == '__main__':
 			zip_ref.close()
 			os.remove(destination)
 
-	else: #if input_csv_file=='snap-training-dataset.csv':
-		print('Downloading snap imagery ...')
-		print('... file is ~0.25GB - takes a while')
-		url = 'https://drive.google.com/file/d/1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx/view?usp=sharing'
-		image_dir = 'snap_images'
-		if not os.path.isdir(os.path.join(base_dir,image_dir)):
-			file_id = '1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx'
-			destination = 'snap_images.zip'
-			download_file_from_google_drive(file_id, destination)	
-			print('download complete ... unzipping')	
-			zip_ref = zipfile.ZipFile(destination, 'r')
-			zip_ref.extractall(os.getcwd()+os.sep+'train')
-			zip_ref.close()
-			os.remove(destination)			
+#	else: #if input_csv_file=='snap-training-dataset.csv':
+#		print('Downloading snap imagery ...')
+#		print('... file is ~0.25GB - takes a while')
+#                #https://drive.google.com/open?id=1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx
+#                #url = 'https://drive.google.com/open?id=1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
+#		url = 'https://drive.google.com/file/d/1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx/view?usp=sharing'
+#		image_dir = 'snap_images'
+#		if not os.path.isdir(os.path.join(base_dir,image_dir)):
+#			file_id = '1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx'
+#                        #file_id = '1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
+#			destination = 'snap_images.zip'
+#			download_file_from_google_drive(file_id, destination)	
+#			print('download complete ... unzipping')	
+#			zip_ref = zipfile.ZipFile(destination, 'r')
+#			zip_ref.extractall(os.getcwd()+os.sep+'train')
+#			zip_ref.close()
+#			os.remove(destination)			
 		
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 
 	## loop through 4 different batch sizes
 	for batch_size in [16,32,64,128]: 
 		print ("[INFO] Batch size = "+str(batch_size))
-		
 		archs = {'1':MobileNet, '2':MobileNetV2, '3':InceptionV3, '4':InceptionResNetV2}
-		counter =1	
-
+		counter =1
+		#archs = {'4':InceptionResNetV2}
+		#counter = 4
 		## loop through 4 different base models
 		for arch in archs:
 			print("==========================================================")
@@ -146,8 +175,10 @@ if __name__ == '__main__':
 			print(arch)	
 			
 			df = pd.read_csv(os.path.join(base_dir, input_csv_file))
-			df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))
-				
+			if input_csv_file=='IR-training-dataset.csv':
+			    df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".png"
+			else:
+			    df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".png"				
 			if category == 'H':
 				mean = df['H'].mean() 
 				div = df['H'].std() 
@@ -159,12 +190,13 @@ if __name__ == '__main__':
 			else:
 				print("Unknown category: "+str(category))
 				print("Fix config file, exiting now ...")
-				import sys
 				sys.exit()
 			
 			df.dropna(inplace = True)
-			
-			df = df.sort_values(by='time', axis=0)
+			try:
+				df = df.sort_values(by='time', axis=0)
+			except:
+				df = df.sort_values(by='id', axis=0)
 
 			if category == 'H':
 				df['category'] = pd.cut(df['H'], 10)
@@ -174,13 +206,27 @@ if __name__ == '__main__':
 			df['index1'] = df.index
 
 			if input_csv_file=='IR-training-dataset.csv':
-				new_df = df.groupby(['category']).apply(lambda x: x.sample(2000, replace = True)).reset_index(drop = True)
+				new_df = df.groupby(['category']).apply(lambda x: x.sample(len(df), replace = True)).reset_index(drop = True)
 			else:
-				new_df = df.groupby(['category']).apply(lambda x: x.sample(400, replace = True)).reset_index(drop = True)			
+				new_df = df.groupby(['category']).apply(lambda x: x.sample(len(df), replace = True)).reset_index(drop = True)
 				
+			## making subsets of data based on prc_lower_withheld and prc_upper_withheld
+			if (prc_lower_withheld>0) & (prc_upper_withheld>0):
+			    up = np.percentile(new_df[category], 100-prc_upper_withheld)
+			    low = np.percentile(new_df[category], prc_lower_withheld)
+			    extreme_df = new_df.loc[(new_df[category] < low) | (new_df[category] > up)]
+			    new_df = new_df.loc[(new_df[category] >= low) & (new_df[category] <= up)]
+			elif (prc_lower_withheld>0) & (prc_upper_withheld==0):
+			    low = np.percentile(new_df[category], prc_lower_withheld)
+			    extreme_df = new_df.loc[(new_df[category] < low)]
+			    new_df = new_df.loc[(new_df[category] >= low)]
+			elif (prc_lower_withheld==0) & (prc_upper_withheld>0):
+			    up = np.percentile(new_df[category], 100-prc_upper_withheld)
+			    extreme_df = new_df.loc[(new_df[category] > up)]
+			    new_df = new_df.loc[(new_df[category] <= up)]
+
 			print('New Data Size:', new_df.shape[0], 'Old Size:', df.shape[0])
-
-
+					    
 			train_df, valid_df = train_test_split(new_df, 
 											   test_size = test_size, 
 											   random_state = 2018,
@@ -279,18 +325,30 @@ if __name__ == '__main__':
 
 			print ("[INFO] Testing optical wave gauge")
 			
-			print("Mean: "+str(mean))
-			print("Stdev: "+str(div))
+			#print("Mean: "+str(mean))
+			#print("Stdev: "+str(div))
 			
 			# the model predicts zscores - recover value using pop. mean and standard dev.			
-			pred_Y = OWG.predict(test_X, batch_size = batch_size, verbose = True) ##div*OWG.predict(test_X, batch_size = batch_size, verbose = True)+mean
-			##test_Y = div*test_Y+mean
+			pred_Y = np.squeeze(OWG.predict(test_X, batch_size = batch_size, verbose = True))
+			##div*OWG.predict(test_X, batch_size = batch_size, verbose = True)+mean
+
+			ex_X, ex_Y = next(gen_from_df(im_gen, 
+										   extreme_df, 
+										 path_col = 'path',
+										y_col = category, #'zscore', 
+										target_size = IMG_SIZE,
+										 color_mode = 'grayscale',
+										batch_size = len(extreme_df)))
+										
+			pred_extreme_Y = np.squeeze(OWG.predict(ex_X, batch_size = batch_size, verbose = True))
 
 			print ("[INFO] Creating plots ")
 			
 			fig, ax1 = plt.subplots(1,1, figsize = (6,6))
 			ax1.plot(test_Y, pred_Y, 'k.', label = 'predictions')
 			ax1.plot(test_Y, test_Y, 'r-', label = 'actual')
+			ax1.plot(ex_Y, pred_extreme_Y, 'b*', label = 'extreme predictions')
+						
 			ax1.legend()
 			if category == 'H':			
 				ax1.set_xlabel('Actual H (m)')
@@ -308,9 +366,31 @@ if __name__ == '__main__':
 					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
 			
 			plt.close('all')
-
+			
+			out ={}
+			out['rms'] = np.sqrt(np.nanmean((pred_Y - test_Y)**2))
+			out['rsq'] = np.min(np.corrcoef(test_Y, pred_Y))**2
+			out['rms_ex'] = np.sqrt(np.nanmean((ex_Y - pred_extreme_Y)**2))
+			out['rsq_ex'] = np.min(np.corrcoef(ex_Y, pred_extreme_Y))**2
+			out['y'] = test_Y
+			out['yhat'] = pred_Y
+			out['yhat_extreme'] = pred_extreme_Y
+			out['test_X'] = test_X
+			out['test_Y'] = test_Y
+			out['extreme_X'] = ex_X
+			out['extreme_Y'] = ex_Y
+			out['history_train_mae'] = history.history['mae_metric']
+			out['history_val_mae'] = history.history['val_mae_metric']
+			out['history_train_loss'] = history.history['loss']
+			out['history_val_loss'] = history.history['val_loss']
+			
+			if input_csv_file=='IR-training-dataset.csv':
+			    savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.mat', out, do_compression=True)
+			else:
+			    savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.mat', out, do_compression=True)		    
+			    
 			# list all data in history
-			print(history.history.keys())
+			#print(history.history.keys())
 			
 			plt.subplot(121)
 			# summarize history for accuracy
@@ -329,8 +409,11 @@ if __name__ == '__main__':
 			plt.xlabel('Epoch')
 			plt.legend(['train', 'test'], loc='upper left')
 			
-			plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_'+category+'_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'_loss_acc_curves.png', dpi=300, bbox_inches='tight')		
-			plt.close('all')			
+			outfile = os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_'+category+'_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'_loss_acc_curves.png'
+			
+			plt.savefig(outfile, dpi=300, bbox_inches='tight')		
+			plt.close('all')
+			print('Made '+outfile)			
 			
 			rand_idx = np.random.choice(range(test_X.shape[0]), 9)
 			fig, m_axs = plt.subplots(3, 3, figsize = (16, 32))

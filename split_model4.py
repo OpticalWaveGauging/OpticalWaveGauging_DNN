@@ -8,7 +8,7 @@ import os
 import json
 
 # load the user configs
-with open(os.getcwd()+os.sep+'conf'+os.sep+'config.json') as f:    
+with open(os.getcwd()+os.sep+'config'+os.sep+'config_IR_T.json') as f:    
 	config = json.load(f)
 
 # config variables
