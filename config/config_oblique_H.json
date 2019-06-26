@@ -1,0 +1,26 @@
+{
+  "samplewise_std_normalization" : true,
+  "samplewise_center"  : true,
+  "input_image_format" : "jpg",
+  "input_csv_file"     : "Nearshore-Training-Oblique-cam2-snap.csv", 
+  "category"           : "H",
+  "prc_lower_withheld": 5,
+  "prc_upper_withheld": 5,
+  
+  "horizontal_flip"    : false,
+  "vertical_flip"      : false,
+  "rotation_range"     : 10,
+  "width_shift_range"  : 0.1,
+  "height_shift_range" : 0.1,
+  "shear_range"        : 0.05,
+  "zoom_range"         : 0.2,
+  "fill_mode"          : "reflect",
+  
+  "img_size"           : 128,
+  "num_epochs"         : 200,
+  "test_size"          : 0.4,
+  "dropout_rate"       : 0.5,
+  "epsilon"            : 0.0001,
+  "min_lr"             : 0.0001,
+  "factor"             : 0.8
+}

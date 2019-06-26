@@ -40,10 +40,6 @@ from utils import *
 from keras.metrics import mean_absolute_error
 from scipy.io import savemat
 
-## mean absolute error
-#def mae_metric(in_gt, in_pred):
-#    return mean_absolute_error(div*in_gt+mean, div*in_pred+mean)
-
 # mean absolute error
 def mae_metric(in_gt, in_pred):
     return mean_absolute_error(in_gt, in_pred)
@@ -139,23 +135,23 @@ if __name__ == '__main__':
 			zip_ref.close()
 			os.remove(destination)
 
-#	else: #if input_csv_file=='snap-training-dataset.csv':
-#		print('Downloading snap imagery ...')
-#		print('... file is ~0.25GB - takes a while')
-#                #https://drive.google.com/open?id=1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx
-#                #url = 'https://drive.google.com/open?id=1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
-#		url = 'https://drive.google.com/file/d/1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx/view?usp=sharing'
-#		image_dir = 'snap_images'
-#		if not os.path.isdir(os.path.join(base_dir,image_dir)):
-#			file_id = '1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx'
-#                        #file_id = '1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
-#			destination = 'snap_images.zip'
-#			download_file_from_google_drive(file_id, destination)	
-#			print('download complete ... unzipping')	
-#			zip_ref = zipfile.ZipFile(destination, 'r')
-#			zip_ref.extractall(os.getcwd()+os.sep+'train')
-#			zip_ref.close()
-#			os.remove(destination)			
+	else: #if input_csv_file=='snap-training-dataset.csv':
+		print('Downloading snap imagery ...')
+		print('... file is ~0.25GB - takes a while')
+               #https://drive.google.com/open?id=1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx
+               #url = 'https://drive.google.com/open?id=1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
+		url = 'https://drive.google.com/file/d/1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx/view?usp=sharing'
+		image_dir = 'snap_images'
+		if not os.path.isdir(os.path.join(base_dir,image_dir)):
+			file_id = '1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx'
+                       #file_id = '1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
+			destination = 'snap_images.zip'
+			download_file_from_google_drive(file_id, destination)	
+			print('download complete ... unzipping')	
+			zip_ref = zipfile.ZipFile(destination, 'r')
+			zip_ref.extractall(os.getcwd()+os.sep+'train')
+			zip_ref.close()
+			os.remove(destination)			
 		
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 
@@ -384,10 +380,10 @@ if __name__ == '__main__':
 			out['history_train_loss'] = history.history['loss']
 			out['history_val_loss'] = history.history['val_loss']
 			
-			if input_csv_file=='IR-training-dataset.csv':
-			    savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.mat', out, do_compression=True)
-			else:
-			    savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.mat', out, do_compression=True)		    
+			# if input_csv_file=='IR-training-dataset.csv':
+			    # savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.mat', out, do_compression=True)
+			# else:
+			    # savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.mat', out, do_compression=True)		    
 			    
 			# list all data in history
 			#print(history.history.keys())
