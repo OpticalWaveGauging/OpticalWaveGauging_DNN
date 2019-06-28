@@ -1,5 +1,5 @@
-## test_OWG_folder.py 
-## A script to test a model on independent data
+## compile_results.py 
+## A script to test a model and make plots
 ## Written by Daniel Buscombe,
 ## Northern Arizona University
 ## daniel.buscombe.nau.edu
@@ -16,29 +16,31 @@ from keras.models import model_from_json
 from imageio import imread
 from keras.preprocessing.image import ImageDataGenerator
 from utils import *
-import os
+import sys, getopt, os
+
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1' ##use CPU
 from glob import glob
 import zipfile
-
 from sklearn.model_selection import train_test_split
 import pandas as pd
-from keras.metrics import mean_absolute_error
-
-def mae_metric(in_gt, in_pred):
-    return mean_absolute_error(in_gt, in_pred)
 
 #==============================================================	
 ## script starts here
 if __name__ == '__main__':
 
-    #image_dir = 'snap_images'
-    #configfile = 'config_nearshore_H.json'
-    #configfile = 'config_nearshore_T.json'
-	
-    image_dir = 'IR_images'		
-    #configfile = 'config_IR_H.json'
-    configfile = 'config_IR_T.json'
+	argv = sys.argv[1:]
+	try:
+	   opts, args = getopt.getopt(argv,"h:c:")
+	except getopt.GetoptError:
+	   print('python train_OWG.py -c configfile.json')
+	   sys.exit(2)
+	for opt, arg in opts:
+	   if opt == '-h':
+	      print('Example usage: python3 train_OWG.py -c conf_IR_h.json')
+	      sys.exit()
+	   elif opt in ("-c"):
+	      configfile = arg
+		  
     #==============================================================
     ## user inputs
     with open(os.getcwd()+os.sep+'config'+os.sep+configfile) as f:    
@@ -51,13 +53,13 @@ if __name__ == '__main__':
     samplewise_std_normalization = config["samplewise_std_normalization"]
     samplewise_center = config["samplewise_center"]  
     num_epochs = int(config["num_epochs"]) ##100
+	prc_lower_withheld = config['prc_lower_withheld'] 
+	prc_upper_withheld = config['prc_upper_withheld'] 
+	image_dir = config['image_direc']
 	
     base_dir = os.path.normpath(os.getcwd()+os.sep+'train') 
 	    
     IMG_SIZE = (im_size, im_size) ##(128, 128)
-    
-    prc_lower_withheld = 5
-    prc_upper_withheld = 5
 
     # #==============================================================
     
@@ -66,6 +68,8 @@ if __name__ == '__main__':
        df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))#+".jpg"
     elif input_csv_file=='IR-training-dataset.csv':
        df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".png"
+    elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+       df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".jpg"
 	   
     df = df.rename(index=str, columns={" H": "H", " T": "T"})   
 
@@ -74,7 +78,10 @@ if __name__ == '__main__':
     if input_csv_file=='snap-training-dataset.csv':    
         df['time'] = [int(k.split(os.sep)[-1].split('.')[0]) for k in df.path]
         df = df.sort_values(by='time', axis=0)
-
+    elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+        df['time'] = [int(k.split(os.sep)[-1].split('.')[0]) for k in df.path]
+        df = df.sort_values(by='time', axis=0)
+		
     ## making subsets of data based on prc_lower_withheld and prc_upper_withheld
     if (prc_lower_withheld>0) & (prc_upper_withheld>0):
         up = np.percentile(df[category], 100-prc_upper_withheld)
@@ -130,23 +137,16 @@ if __name__ == '__main__':
                 if input_csv_file=='snap-training-dataset.csv':			
                    weights_path=os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.nearshore.hdf5'
                 elif input_csv_file=='IR-training-dataset.csv':
-                   weights_path=os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.IR.hdf5'				
+                   weights_path=os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.IR.hdf5'
+                elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+                   weights_path=os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.oblique.hdf5'
             else:
                 if input_csv_file=='snap-training-dataset.csv':			
                    weights_path=os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.nearshore.hdf5'
                 elif input_csv_file=='IR-training-dataset.csv':
-                   weights_path=os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.IR.hdf5'			   
-            if not os.path.isfile(weights_path): #counter==4:
-                if input_csv_file=='snap-training-dataset.csv':			
-                   files = sorted(glob(os.path.dirname(weights_path)+os.sep+'*nearshore*hdf5'))
-                elif input_csv_file=='IR-training-dataset.csv':
-                   files = sorted(glob(os.path.dirname(weights_path)+os.sep+'*IR*hdf5'))			   
-                out_data = b''
-                for fn in files:
-                    with open(fn, 'rb') as fp:
-                        out_data += fp.read()
-                with open(weights_path, 'wb') as fp:
-                   fp.write(out_data)                   	
+                   weights_path=os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.IR.hdf5'
+                elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+                   weights_path=os.getcwd()+os.sep+'im'+str(im_size)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.oblique.hdf5'                 	
 
             # load json and create model
             print("Creating model")						
@@ -173,47 +173,44 @@ if __name__ == '__main__':
     counter = 1
     for model in [1,2,3,4]:
         for batch_size in [16,32,64,128]:
-            ## average over batch per model
             pred_Y = yhat['M'+str(model)+'_B'+str(batch_size)] 
-		    #(yhat['M'+str(counter)+'_B16']+yhat['M'+str(counter)+'_B32']+yhat['M'+str(counter)+'_B64']+yhat['M'+str(counter)+'_B128'])/4
             pred_Y = np.squeeze(np.asarray(pred_Y))
 
             pred_exY = exyhat['M'+str(model)+'_B'+str(batch_size)] 
-		    #(exyhat['M'+str(counter)+'_B16']+exyhat['M'+str(counter)+'_B32']+exyhat['M'+str(counter)+'_B64']+exyhat['M'+str(counter)+'_B128'])/4
             pred_exY = np.squeeze(np.asarray(pred_exY))
                 
             plt.subplot(4,4,counter)
             plt.plot(test_Y, pred_Y, 'k.', markersize=3, label = 'predictions')
             plt.plot(ex_Y, pred_exY, 'bx', markersize=3, label = 'predictions')
-            if input_csv_file=='snap-training-dataset.csv':						
+            if input_csv_file=='IR-training-dataset.csv':						
                if category=='H':			
                   plt.plot([0.5, 2.75], [0.5, 2.75], 'r-', label = 'actual')
                   plt.xlim(0.25,3); plt.ylim(0.25, 3)
                else:
                   plt.plot([8, 23], [8, 23], 'r-', label = 'actual')
                   plt.xlim(7,24); plt.ylim(7, 24)	
-            elif input_csv_file=='IR-training-dataset.csv':						
-               if category=='H':			
+            else:
+				  if category=='H':			
                   plt.plot([0.25, 5.75], [0.25, 5.75], 'r-', label = 'actual')
                   plt.xlim(0,6); plt.ylim(0, 6)
                else:
                   plt.plot([3, 19], [3, 19], 'r-', label = 'actual')
                   plt.xlim(2,20); plt.ylim(2, 20)				  
             if counter==13:
-               if input_csv_file=='snap-training-dataset.csv':						
-                  if category=='H':
-                     plt.xlabel(r'Actual $H_s$ (m)', fontsize=6)
-                     plt.ylabel(r'Predicted $H_s$ (m)', fontsize=6)
-                  elif category=='T':
-                     plt.xlabel(r'Actual $T_p$ (s)', fontsize=6)
-                     plt.ylabel(r'Predicted $T_p$ (s)', fontsize=6)
-               elif input_csv_file=='IR-training-dataset.csv':						
+               if input_csv_file=='IR-training-dataset.csv':						
                   if category=='H':
                      plt.xlabel(r'Actual $H$ (m)', fontsize=6)
                      plt.ylabel(r'Predicted $H$ (m)', fontsize=6)
                   elif category=='T':
                      plt.xlabel(r'Actual $T$ (s)', fontsize=6)
-                     plt.ylabel(r'Predicted $T$ (s)', fontsize=6)				  
+                     plt.ylabel(r'Predicted $T$ (s)', fontsize=6)
+               else:						
+                  if category=='H':
+                     plt.xlabel(r'Actual $H_s$ (m)', fontsize=6)
+                     plt.ylabel(r'Predicted $H_s$ (m)', fontsize=6)
+                  elif category=='T':
+                     plt.xlabel(r'Actual $T_p$ (s)', fontsize=6)
+                     plt.ylabel(r'Predicted $T_p$ (s)', fontsize=6)					 
             rms = np.sqrt(np.nanmean((pred_Y - test_Y)**2))
             rsq = np.min(np.corrcoef(test_Y, pred_Y))**2
             exrms = np.sqrt(np.nanmean((pred_exY - ex_Y)**2))
@@ -229,6 +226,9 @@ if __name__ == '__main__':
        plt.savefig('ensemble_allmodels_'+category+'-IR.png', dpi=300, bbox_inches='tight')	
     elif input_csv_file=='snap-training-dataset.csv':
        plt.savefig('ensemble_allmodels_'+category+'-nearshore.png', dpi=300, bbox_inches='tight')
+    elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+       plt.savefig('ensemble_allmodels_'+category+'-oblique.png', dpi=300, bbox_inches='tight')
+	   
     plt.close('all') ; del fig
 	
 	

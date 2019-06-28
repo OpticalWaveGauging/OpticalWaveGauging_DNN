@@ -1,5 +1,5 @@
 ## train_OWG.py 
-## A script to train optical wave height gauges for 4 models and 4 batch sizes
+## A script to train optical wave gauges for 4 models and 4 batch sizes
 ## Written by Daniel Buscombe,
 ## Northern Arizona University
 ## daniel.buscombe.nau.edu
@@ -36,14 +36,7 @@ from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
 
 from utils import *
-
-from keras.metrics import mean_absolute_error
-from scipy.io import savemat
-
-# mean absolute error
-def mae_metric(in_gt, in_pred):
-    return mean_absolute_error(in_gt, in_pred)
-
+#from scipy.io import savemat
 
 #==============================================================	
 ## script starts here
@@ -72,14 +65,12 @@ if __name__ == '__main__':
 	# start time
 	print ("start time - {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")))
 	start = time.time()
-	
 
 	print(config)
 	# config variables
 	imsize    = int(config["img_size"])
-	num_epochs = int(config["num_epochs"]) ##100
+	num_epochs = int(config["num_epochs"]) 
 	test_size = float(config["test_size"])
-	#batch_size = int(config["batch_size"])
 	height_shift_range = float(config["height_shift_range"])
 	width_shift_range = float(config["width_shift_range"])
 	rotation_range = float(config["rotation_range"])
@@ -89,14 +80,13 @@ if __name__ == '__main__':
 	samplewise_center = config["samplewise_center"]
 	shear_range = float(config["shear_range"])
 	zoom_range = float(config["zoom_range"])
-	#steps_per_epoch = int(config["steps_per_epoch"])
 	dropout_rate = float(config["dropout_rate"])
 	epsilon = float(config["epsilon"])
 	min_lr = float(config["min_lr"])
 	factor = float(config["factor"])
 	input_image_format = config["input_image_format"]
 	input_csv_file = config["input_csv_file"]
-	category = config["category"] ##'H'
+	category = config["category"] 
 	fill_mode = config["fill_mode"]
 	prc_lower_withheld = config['prc_lower_withheld'] 
 	prc_upper_withheld = config['prc_upper_withheld'] 
@@ -133,121 +123,97 @@ if __name__ == '__main__':
 			zip_ref = zipfile.ZipFile(destination, 'r')
 			zip_ref.extractall(os.getcwd()+os.sep+'train')
 			zip_ref.close()
-			os.remove(destination)
-
-	else: #if input_csv_file=='snap-training-dataset.csv':
-		print('Downloading snap imagery ...')
-		print('... file is ~0.25GB - takes a while')
-               #https://drive.google.com/open?id=1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx
-               #url = 'https://drive.google.com/open?id=1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
-		url = 'https://drive.google.com/file/d/1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx/view?usp=sharing'
-		image_dir = 'snap_images'
-		if not os.path.isdir(os.path.join(base_dir,image_dir)):
-			file_id = '1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx'
-                       #file_id = '1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
-			destination = 'snap_images.zip'
-			download_file_from_google_drive(file_id, destination)	
-			print('download complete ... unzipping')	
-			zip_ref = zipfile.ZipFile(destination, 'r')
-			zip_ref.extractall(os.getcwd()+os.sep+'train')
-			zip_ref.close()
-			os.remove(destination)			
+			os.remove(destination)		
+	elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+		image_dir = 'snap'
 		
 	IMG_SIZE = (imsize, imsize) ##(128, 128) 
 
-	## loop through 4 different batch sizes
-	for batch_size in [16,32,64,128]: 
-		print ("[INFO] Batch size = "+str(batch_size))
-		archs = {'1':MobileNet, '2':MobileNetV2, '3':InceptionV3, '4':InceptionResNetV2}
-		counter =1
-		#archs = {'4':InceptionResNetV2}
-		#counter = 4
-		## loop through 4 different base models
-		for arch in archs:
-			print("==========================================================")
-			print("==========================================================")
-			print("==========================================================")
+	df = pd.read_csv(os.path.join(base_dir, input_csv_file))
+	if input_csv_file=='IR-training-dataset.csv':
+		df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".png"
+	elif input_csv_file=='snap-training-dataset.csv':
+		df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))
+	elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+		df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".jpg"
+		
+	df = df.rename(index=str, columns={" H": "H", " T": "T"})   
+	
+	if category == 'H':
+		mean = df['H'].mean() 
+		div = df['H'].std() 
+		df['zscore'] = df['H'].map(lambda x: (x-mean)/div)
+	elif category == 'T':
+		mean = df['T'].mean() 
+		div = df['T'].std() 
+		df['zscore'] = df['T'].map(lambda x: (x-mean)/div)			
+	else:
+		print("Unknown category: "+str(category))
+		print("Fix config file, exiting now ...")
+		sys.exit()
+	
+	df.dropna(inplace = True)
+	try:
+		df = df.sort_values(by='time', axis=0)
+	except:
+		df = df.sort_values(by='id', axis=0)
 
-			print(arch)	
-			
-			df = pd.read_csv(os.path.join(base_dir, input_csv_file))
-			if input_csv_file=='IR-training-dataset.csv':
-			    df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".png"
-			else:
-			    df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".png"				
-			if category == 'H':
-				mean = df['H'].mean() 
-				div = df['H'].std() 
-				df['zscore'] = df['H'].map(lambda x: (x-mean)/div)
-			elif category == 'T':
-				mean = df['T'].mean() 
-				div = df['T'].std() 
-				df['zscore'] = df['T'].map(lambda x: (x-mean)/div)			
-			else:
-				print("Unknown category: "+str(category))
-				print("Fix config file, exiting now ...")
-				sys.exit()
-			
-			df.dropna(inplace = True)
-			try:
-				df = df.sort_values(by='time', axis=0)
-			except:
-				df = df.sort_values(by='id', axis=0)
+	if category == 'H':
+		df['category'] = pd.cut(df['H'], 10)
+	else:
+		df['category'] = pd.cut(df['T'], 8)
+		
+	df['index1'] = df.index
 
-			if category == 'H':
-				df['category'] = pd.cut(df['H'], 10)
-			else:
-				df['category'] = pd.cut(df['T'], 8)
+	if input_csv_file=='IR-training-dataset.csv':
+		new_df = df.groupby(['category']).apply(lambda x: x.sample(int(len(df)/2), replace = True)).reset_index(drop = True)
+	elif input_csv_file=='snap-training-dataset.csv':
+		new_df = df.groupby(['category']).apply(lambda x: x.sample(int(len(df)/2), replace = True)).reset_index(drop = True)
+	elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+		new_df = df.groupby(['category']).apply(lambda x: x.sample(int(len(df)/2), replace = True)).reset_index(drop = True)
+		
+	## making subsets of data based on prc_lower_withheld and prc_upper_withheld
+	if (prc_lower_withheld>0) & (prc_upper_withheld>0):
+		up = np.percentile(new_df[category], 100-prc_upper_withheld)
+		low = np.percentile(new_df[category], prc_lower_withheld)
+		extreme_df = new_df.loc[(new_df[category] < low) | (new_df[category] > up)]
+		new_df = new_df.loc[(new_df[category] >= low) & (new_df[category] <= up)]
+	elif (prc_lower_withheld>0) & (prc_upper_withheld==0):
+		low = np.percentile(new_df[category], prc_lower_withheld)
+		extreme_df = new_df.loc[(new_df[category] < low)]
+		new_df = new_df.loc[(new_df[category] >= low)]
+	elif (prc_lower_withheld==0) & (prc_upper_withheld>0):
+		up = np.percentile(new_df[category], 100-prc_upper_withheld)
+		extreme_df = new_df.loc[(new_df[category] > up)]
+		new_df = new_df.loc[(new_df[category] <= up)]
+
+	print('New Data Size:', new_df.shape[0], 'Old Size:', df.shape[0])
 				
-			df['index1'] = df.index
+	train_df, valid_df = train_test_split(new_df, 
+									   test_size = test_size, 
+									   random_state = 2018,
+									   stratify = new_df['category'])
+	print('train', train_df.shape[0], 'validation', valid_df.shape[0])
 
-			if input_csv_file=='IR-training-dataset.csv':
-				new_df = df.groupby(['category']).apply(lambda x: x.sample(len(df), replace = True)).reset_index(drop = True)
-			else:
-				new_df = df.groupby(['category']).apply(lambda x: x.sample(len(df), replace = True)).reset_index(drop = True)
-				
-			## making subsets of data based on prc_lower_withheld and prc_upper_withheld
-			if (prc_lower_withheld>0) & (prc_upper_withheld>0):
-			    up = np.percentile(new_df[category], 100-prc_upper_withheld)
-			    low = np.percentile(new_df[category], prc_lower_withheld)
-			    extreme_df = new_df.loc[(new_df[category] < low) | (new_df[category] > up)]
-			    new_df = new_df.loc[(new_df[category] >= low) & (new_df[category] <= up)]
-			elif (prc_lower_withheld>0) & (prc_upper_withheld==0):
-			    low = np.percentile(new_df[category], prc_lower_withheld)
-			    extreme_df = new_df.loc[(new_df[category] < low)]
-			    new_df = new_df.loc[(new_df[category] >= low)]
-			elif (prc_lower_withheld==0) & (prc_upper_withheld>0):
-			    up = np.percentile(new_df[category], 100-prc_upper_withheld)
-			    extreme_df = new_df.loc[(new_df[category] > up)]
-			    new_df = new_df.loc[(new_df[category] <= up)]
-
-			print('New Data Size:', new_df.shape[0], 'Old Size:', df.shape[0])
-					    
-			train_df, valid_df = train_test_split(new_df, 
-											   test_size = test_size, 
-											   random_state = 2018,
-											   stratify = new_df['category'])
-			print('train', train_df.shape[0], 'validation', valid_df.shape[0])
-
-			im_gen = ImageDataGenerator(samplewise_center=samplewise_center, ##True, 
-										  samplewise_std_normalization=samplewise_std_normalization, ##True, 
-										  horizontal_flip = horizontal_flip, ##False, 
-										  vertical_flip = vertical_flip, ##False, 
-										  height_shift_range = height_shift_range, ##0.1, 
-										  width_shift_range = width_shift_range, ##0.1, 
-										  rotation_range = rotation_range, ##10, 
-										  shear_range = shear_range, ##0.05,
-										  fill_mode = fill_mode, ##'reflect', #'nearest',
-										  zoom_range= zoom_range) ##0.2)
-										  
-			test_X, test_Y = next(gen_from_df(im_gen, 
-										   valid_df, 
-										 path_col = 'path',
-										y_col = category, #'zscore', 
-										target_size = IMG_SIZE,
-										 color_mode = 'grayscale',
-										batch_size = len(valid_df))) 
-										
+	im_gen = ImageDataGenerator(samplewise_center=samplewise_center, ##True, 
+								  samplewise_std_normalization=samplewise_std_normalization, ##True, 
+								  horizontal_flip = horizontal_flip, ##False, 
+								  vertical_flip = vertical_flip, ##False, 
+								  height_shift_range = height_shift_range, ##0.1, 
+								  width_shift_range = width_shift_range, ##0.1, 
+								  rotation_range = rotation_range, ##10, 
+								  shear_range = shear_range, ##0.05,
+								  fill_mode = fill_mode, ##'reflect', #'nearest',
+								  zoom_range= zoom_range) ##0.2)
+								  
+	test_X, test_Y = next(gen_from_df(im_gen, 
+								   valid_df, 
+								 path_col = 'path',
+								y_col = category, #'zscore', 
+								target_size = IMG_SIZE,
+								 color_mode = 'grayscale',
+								batch_size = len(valid_df))) 
+								
 #			_, test_id = next(gen_from_df(im_gen, 
 #										   valid_df, 
 #										 path_col = 'path',
@@ -255,16 +221,16 @@ if __name__ == '__main__':
 #										target_size = IMG_SIZE,
 #										 color_mode = 'grayscale',
 #										batch_size = len(valid_df))) 										
-										
-										
-			train_X, train_Y = next(gen_from_df(im_gen, 
-										   train_df, 
-										 path_col = 'path',
-										y_col = category, #'zscore', 
-										target_size = IMG_SIZE,
-										 color_mode = 'grayscale',
-										batch_size = len(train_df))) 										
-										
+								
+								
+	train_X, train_Y = next(gen_from_df(im_gen, 
+								   train_df, 
+								 path_col = 'path',
+								y_col = category, #'zscore', 
+								target_size = IMG_SIZE,
+								 color_mode = 'grayscale',
+								batch_size = len(train_df))) 										
+								
 #			_, train_id = next(gen_from_df(im_gen, 
 #										   train_df, 
 #										 path_col = 'path',
@@ -272,21 +238,44 @@ if __name__ == '__main__':
 #										target_size = IMG_SIZE,
 #										 color_mode = 'grayscale',
 #										batch_size = len(train_df))) 	
+	ex_X, ex_Y = next(gen_from_df(im_gen, 
+								   extreme_df, 
+								 path_col = 'path',
+								y_col = category, #'zscore', 
+								target_size = IMG_SIZE,
+								 color_mode = 'grayscale',
+								batch_size = len(extreme_df)))
+								
+	## loop through 4 different batch sizes
+	for batch_size in [16,32,64,128]: 
+		print ("[INFO] Batch size = "+str(batch_size))
+		archs = {'1':MobileNet, '2':MobileNetV2, '3':InceptionV3, '4':InceptionResNetV2}
+		counter =1
+		## loop through 4 different base models
+		for arch in archs:
+			print("==========================================================")
+			print("==========================================================")
+			print("==========================================================")
+
+			print(arch)		
 										
 			if category == 'H':		
 				if input_csv_file=='IR-training-dataset.csv':			
 					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.IR.hdf5'
-				else:
-					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.nearshore.hdf5'			
+				elif input_csv_file=='snap-training-dataset.csv':
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.nearshore.hdf5'	
+				elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveheight_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.oblique.hdf5'						
 			else:
 				if input_csv_file=='IR-training-dataset.csv':						
 					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.IR.hdf5'	
-				else:
-					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.nearshore.hdf5'					
+				elif input_csv_file=='snap-training-dataset.csv':
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.nearshore.hdf5'	
+				elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+					weights_path=os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'waveperiod_weights_model'+str(counter)+'_'+str(batch_size)+'batch.best.oblique.hdf5'					
 				
 			model_checkpoint = ModelCheckpoint(weights_path, monitor='val_loss', verbose=1, 
 									 save_best_only=True, mode='min', save_weights_only = True)
-
 
 			reduceloss_plat = ReduceLROnPlateau(monitor='val_loss', factor=factor, patience=10, verbose=1, mode='auto', epsilon=epsilon, cooldown=5, min_lr=min_lr) ##0.0001, 0.8
 			earlystop = EarlyStopping(monitor="val_loss", mode="min", patience=15) 
@@ -320,21 +309,11 @@ if __name__ == '__main__':
 			    json_file.write(model_json)						
 
 			print ("[INFO] Testing optical wave gauge")
-			
-			#print("Mean: "+str(mean))
-			#print("Stdev: "+str(div))
-			
-			# the model predicts zscores - recover value using pop. mean and standard dev.			
+						
 			pred_Y = np.squeeze(OWG.predict(test_X, batch_size = batch_size, verbose = True))
+			
+			# or if the model predicts zscores - recover value using pop. mean and standard dev.			
 			##div*OWG.predict(test_X, batch_size = batch_size, verbose = True)+mean
-
-			ex_X, ex_Y = next(gen_from_df(im_gen, 
-										   extreme_df, 
-										 path_col = 'path',
-										y_col = category, #'zscore', 
-										target_size = IMG_SIZE,
-										 color_mode = 'grayscale',
-										batch_size = len(extreme_df)))
 										
 			pred_extreme_Y = np.squeeze(OWG.predict(ex_X, batch_size = batch_size, verbose = True))
 
@@ -351,34 +330,38 @@ if __name__ == '__main__':
 				ax1.set_ylabel('Predicted H (m)')
 				if input_csv_file=='IR-training-dataset.csv':										
 					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
-				else:
-					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
+				elif input_csv_file=='snap-training-dataset.csv':
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')			
+				elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_oblique.png', dpi=300, bbox_inches='tight')						
 			else:
 				ax1.set_xlabel('Actual T (s)')
 				ax1.set_ylabel('Predicted T (s)')
 				if input_csv_file=='IR-training-dataset.csv':										
 					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
-				else:
-					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
+				elif input_csv_file=='snap-training-dataset.csv':
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')					
+				elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+					plt.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_oblique.png', dpi=300, bbox_inches='tight')				
 			
 			plt.close('all')
 			
-			out ={}
-			out['rms'] = np.sqrt(np.nanmean((pred_Y - test_Y)**2))
-			out['rsq'] = np.min(np.corrcoef(test_Y, pred_Y))**2
-			out['rms_ex'] = np.sqrt(np.nanmean((ex_Y - pred_extreme_Y)**2))
-			out['rsq_ex'] = np.min(np.corrcoef(ex_Y, pred_extreme_Y))**2
-			out['y'] = test_Y
-			out['yhat'] = pred_Y
-			out['yhat_extreme'] = pred_extreme_Y
-			out['test_X'] = test_X
-			out['test_Y'] = test_Y
-			out['extreme_X'] = ex_X
-			out['extreme_Y'] = ex_Y
-			out['history_train_mae'] = history.history['mae_metric']
-			out['history_val_mae'] = history.history['val_mae_metric']
-			out['history_train_loss'] = history.history['loss']
-			out['history_val_loss'] = history.history['val_loss']
+			# out ={}
+			# out['rms'] = np.sqrt(np.nanmean((pred_Y - test_Y)**2))
+			# out['rsq'] = np.min(np.corrcoef(test_Y, pred_Y))**2
+			# out['rms_ex'] = np.sqrt(np.nanmean((ex_Y - pred_extreme_Y)**2))
+			# out['rsq_ex'] = np.min(np.corrcoef(ex_Y, pred_extreme_Y))**2
+			# out['y'] = test_Y
+			# out['yhat'] = pred_Y
+			# out['yhat_extreme'] = pred_extreme_Y
+			# out['test_X'] = test_X
+			# out['test_Y'] = test_Y
+			# out['extreme_X'] = ex_X
+			# out['extreme_Y'] = ex_Y
+			# out['history_train_mae'] = history.history['mae_metric']
+			# out['history_val_mae'] = history.history['val_mae_metric']
+			# out['history_train_loss'] = history.history['loss']
+			# out['history_val_loss'] = history.history['val_loss']
 			
 			# if input_csv_file=='IR-training-dataset.csv':
 			    # savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.mat', out, do_compression=True)
@@ -404,9 +387,13 @@ if __name__ == '__main__':
 			plt.ylabel('Loss')
 			plt.xlabel('Epoch')
 			plt.legend(['train', 'test'], loc='upper left')
-			
-			outfile = os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_'+category+'_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'_loss_acc_curves.png'
-			
+
+			if input_csv_file=='IR-training-dataset.csv':													
+				outfile = os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_'+category+'_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'_loss_acc_curves_IR.png'
+			elif input_csv_file=='snap-training-dataset.csv':
+				outfile = os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_'+category+'_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'_loss_acc_curves_nearshore.png'	
+			elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+				outfile = os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_'+category+'_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'_loss_acc_curves_oblique.png'					
 			plt.savefig(outfile, dpi=300, bbox_inches='tight')		
 			plt.close('all')
 			print('Made '+outfile)			
@@ -425,14 +412,18 @@ if __name__ == '__main__':
 			if category == 'H':	
 				if input_csv_file=='IR-training-dataset.csv':													
 					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
-				else:
-					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
+				elif input_csv_file=='snap-training-dataset.csv':
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')
+				elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'H'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveheight_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_oblique.png', dpi=300, bbox_inches='tight')					
 			else:
 				if input_csv_file=='IR-training-dataset.csv':													
 					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.png', dpi=300, bbox_inches='tight')
-				else:
+				elif input_csv_file=='snap-training-dataset.csv':
 					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.png', dpi=300, bbox_inches='tight')				
-
+				elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+					fig.savefig(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+'T'+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_waveperiod_predictions_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_oblique.png', dpi=300, bbox_inches='tight')	
+				
 			counter += 1	
 	
 	

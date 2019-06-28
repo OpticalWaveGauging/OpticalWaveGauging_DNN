@@ -1,0 +1,12 @@
+{
+  "samplewise_std_normalization" : true,
+  "samplewise_center"  : true,
+  "weights_path" : "im128/res/100epoch/H/model1/batch16/waveheight_weights_model1_16batch.best.nearshore.hdf5",
+  "input_csv_file"     : "train/snap-training-dataset.csv", 
+  "category"           : "H",
+  "im_size"            : 128,
+  "image_direc"        : "train/snap_images",
+  "prc_lower_withheld": 5,
+  "prc_upper_withheld": 5,
+  "file_ext": "jpg"  
+}

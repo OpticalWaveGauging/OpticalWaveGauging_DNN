@@ -4,10 +4,9 @@ Data and code to implement Buscombe et al (2019) optical wave gauging (OWG) usin
 
 > Buscombe, Carini, Harrison, Chickadel, and Warrick (in review) Optical wave gauging with deep neural networks. Submitted to Coastal Engineering 
 
-
 Software and data for training deep convolutional neural network models to estimate wave height and wave period from surf zone imagery
 
-This software was tested on Windows 10 with python 3.6, tensorflow 1.11.0 and keras 2.2.4. This software was written by Dr Daniel Buscombe at Northern Arizona University, in the winter of 2018/19.
+This software was tested on Windows 10 and Ubuntu Linux with python 3.6, tensorflow 1.11.0 and keras 2.2.4. This software was written by Dr Daniel Buscombe at Northern Arizona University, 2018-2019.
 
 THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IF YOU ENCOUNTER A PROBLEM/BUG OR HAVE A QUESTION OR SUGGESTION, PLEASE USE THE "ISSUES" TAB ON GITHUB. OTHERWISE, THIS SOFTWARE IS UNSUPPORTED.
 
@@ -15,13 +14,13 @@ THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IF YOU ENCOUNTE
 ### Folder structure
 
 * \conda_env contains yml files for setting up a conda environment
-* \conf contains the configuration file with user-definable settings
+* \config contains the configuration file with user-definable settings
 * \train contains files using for training models 
 * \im128 is a file structure that will contain results from model training
 
 ## Setting up computing environments
 
-### Install Anaconda pyton distribution
+### Install Anaconda python distribution
 
 Install the latest version of Anaconda (https://www.anaconda.com/distribution/)
 
@@ -114,10 +113,12 @@ Configuration files are in JSON format, like this:
 {
   "samplewise_std_normalization" : true,
   "samplewise_center"  : true,
-  "input_image_format" : "png"
-  "input_csv_file"     : "IR-training-dataset.csv"
-  "category"           : 'H',
-
+  "input_image_format" : "jpg",
+  "input_csv_file"     : "snap-training-dataset.csv", 
+  "category"           : "H",
+  "prc_lower_withheld": 5,
+  "prc_upper_withheld": 5,
+  
   "horizontal_flip"    : false,
   "vertical_flip"      : false,
   "rotation_range"     : 10,
@@ -127,11 +128,9 @@ Configuration files are in JSON format, like this:
   "zoom_range"         : 0.2,
   "fill_mode"          : "reflect",
   
-  "batch_size"         : 64,
   "img_size"           : 128,
-  "num_epochs"         : 100,
-  "test_size"          : 0.33,
-  "steps_per_epoch"    : 100,
+  "num_epochs"         : 5,
+  "test_size"          : 0.4,
   "dropout_rate"       : 0.5,
   "epsilon"            : 0.0001,
   "min_lr"             : 0.0001,
@@ -150,8 +149,6 @@ Configuration files are in JSON format, like this:
 
 * num_epochs = number of training epochs
 * test_size = proportion of data set to use for training
-* batch_size = number of images to use per model training step
-* steps_per_epoch = number of training steps per training epoch
 * dropout_rate: proportion of neurons to randomly drop in dropout layer
 * factor: factor by which the learning rate will be reduced. new_lr = lr * factor
 * epsilon: threshold for measuring the new optimum, to only focus on significant changes.
@@ -187,18 +184,14 @@ With height_shift_range=2 possible values are integers [-1, 0, +1], same as with
 To train models to predict wave height, the following scripts will do so for all combinations of 4 models (MobileNetV1, MobileNetV2, InceptionV3, and InceptionResnet2), and 4 batch sizes (16, 32, 64, and 128 images). 
 
 ```
-python train_OWG.py
+python train_OWG.py -c configfile.json
 ```
 
-The following script does the same using generator functions in the training
+In the above, ```configfile.json``` is one of the config files in the . Just provide the name of the json file, including the 'json' file extension, not the full path to the file, like this:
 
 ```
-python train_OWG_gen.py
+python train_OWG.py -c config_IR_H.json
 ```
-
-Both scripts provide comparable results and are provided to illustrate two different options for training, mostly for advanced users wishing to modify and adapt the code for other purposes. 
-
-You may notice ```python train_OWG.py``` is marginally faster
 
 The best models are obtained using larger numbers of epochs (say, 100+), but you'll probably want to train them on a GPU (install ```tensorflow-gpu``` instead of ```tensorflow```).
 
@@ -298,28 +291,11 @@ im128
 
 ---------------batch128
 
-Then run a script to split large model files to smaller files < 100 MB (so they fit on github)
-
-```
-python split_model4.py
-```
 
 Finally, compile and plot results from all models using
 
 ```
 python compile_results.py
-```
-
-Data are written out to the Matlab format. For example, for the IR imagery wave height model, the mat file would be:
-
-```
-IR_all_model_preds_height_128.mat
-```
-
-and for the IR imagery wave period model, the mat file would be:
-
-```
-IR_all_model_preds_period_128.mat
 ```
 
 ## Operational Mode

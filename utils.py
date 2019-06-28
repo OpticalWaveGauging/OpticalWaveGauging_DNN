@@ -1,5 +1,5 @@
 ## utils.py 
-## Utilities for training optical wave height gauges 
+## Utilities for training optical wave gauges 
 ## Written by Daniel Buscombe,
 ## Northern Arizona University
 ## daniel.buscombe.nau.edu
@@ -7,7 +7,13 @@
 import os
 import numpy as np
 import requests
+from keras.metrics import mean_absolute_error
 
+# mean absolute error
+def mae_metric(in_gt, in_pred):
+    return mean_absolute_error(in_gt, in_pred)
+
+	
 def gen_from_df(img_data_gen, in_df, path_col, y_col, **dflow_args):
     base_dir = os.path.dirname(in_df[path_col].values[0])
 	
