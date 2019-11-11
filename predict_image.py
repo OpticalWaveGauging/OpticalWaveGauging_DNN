@@ -1,5 +1,12 @@
+#      ▄▄▌ ▐ ▄▌ ▄▄ • 
+#▪     ██· █▌▐█▐█ ▀ ▪
+# ▄█▀▄ ██▪▐█▐▐▌▄█ ▀█▄
+#▐█▌.▐▌▐█▌██▐█▌▐█▄▪▐█
+# ▀█▄▀▪ ▀▀▀▀ ▀▪·▀▀▀▀ 
+#
 ## predict_image.py 
-## A script to test a model on a single image
+## A script to use a model on a single image for prediction
+## modify config_test.json with relevant inputs
 ## Written by Daniel Buscombe,
 ## Northern Arizona University
 ## daniel.buscombe.nau.edu
@@ -7,10 +14,10 @@
 # import libraries
 import sys, getopt, os
 import numpy as np 
-from keras.models import model_from_json
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1' ##use CPU
-from keras.preprocessing import image
 import json
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1' ##use CPU
+from utils import *
 
 #==============================================================	
 ## script starts here
@@ -27,17 +34,17 @@ if __name__ == '__main__':
 
     for opt, arg in opts:
        if opt == '-h':
-          print('Example usage: python predict_image.py -i train/snap_images/1513706400.cx.snap.jpg')
+          print('Example usage: python predict_image.py -i snap_images/data/1513706400.cx.snap.jpg')
           sys.exit()
        elif opt in ("-i"):
           image_path = arg
 
     ##examples:
-    #image_path = 'train/snap_images/1513706400.cx.snap.jpg' #0.4      
-    #image_path = 'train/snap_images/1516127400.cx.snap.jpg' #1.85
-    #image_path = 'train/snap_images/1516401000.cx.snap.jpg' #2.33
+    #image_path = 'snap_images/data/1513706400.cx.snap.jpg' #0.4      
+    #image_path = 'snap_images/data/1516127400.cx.snap.jpg' #1.85
+    #image_path = 'snap_images/data/1516401000.cx.snap.jpg' #2.33
 
-    with open(os.getcwd()+os.sep+'conf'+os.sep+'config_test.json') as f:    
+    with open(os.getcwd()+os.sep+'config'+os.sep+'config_test.json') as f:    
 	    config = json.load(f)
 
     # config variables
@@ -49,33 +56,17 @@ if __name__ == '__main__':
 
     IMG_SIZE = (im_size, im_size)
     #==============================================================
-     
+    print ("[INFO] Preparing model...")     
     # load json and create model
-    json_file = open(weights_path.replace('.hdf5','.json'), 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    OWG = model_from_json(loaded_model_json)
-    # load weights into new model
-    OWG.load_weights(weights_path)
+    # call the utils.py function load_OWG_json    
+    OWG = load_OWG_json(weights_path)
 
-    OWG.compile(optimizer = 'adam', loss = 'mse')  
-
-    img = image.load_img(image_path, target_size=IMG_SIZE)
-    x = image.img_to_array(img)
-    x =  0.21*x[:,:,0] + 0.72*x[:,:,1] + 0.07*x[:,:,2] ##rgb to grey
-    
-    if samplewise_std_normalization==True:
-        x = x/np.std(x)   
-    if samplewise_center==True:
-        x = x - np.mean(x)    
-    x = np.expand_dims(x, axis=0)
-    x = np.expand_dims(x, axis=3)
-						      
-    pred_Y = np.squeeze(OWG.predict(x, batch_size = 1, verbose = False))
+    print ("[INFO] Predicting ...")
+    # call the utils.py function pred_1image  
+    pred_Y = pred_1image(OWG, image_path, IMG_SIZE, 
+                        samplewise_std_normalization, samplewise_center)
     print("====================================")
     print(category+' = '+str(pred_Y)[:5])
     print("====================================")
 
 
-
- 

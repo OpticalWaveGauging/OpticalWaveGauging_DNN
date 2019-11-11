@@ -1,12 +1,12 @@
 ## About
 
-Data and code to implement Buscombe et al (2019) optical wave gauging (OWG) using deep neural networks, detailed in the paper:
+Data and code to implement optical wave gauging (OWG) using deep neural networks, detailed in the paper Buscombe et al (2019):
 
-> Buscombe, Carini, Harrison, Chickadel, and Warrick (in review) Optical wave gauging with deep neural networks. Submitted to Coastal Engineering 
+> Buscombe, Carini, Harrison, Chickadel, and Warrick (2019) Optical wave gauging using deep neural networks. Coastal Engineering  https://doi.org/10.1016/j.coastaleng.2019.103593
 
 Software and data for training deep convolutional neural network models to estimate wave height and wave period from surf zone imagery
 
-This software was tested on Windows 10 and Ubuntu Linux with python 3.6, tensorflow 1.11.0 and keras 2.2.4. This software was written by Dr Daniel Buscombe at Northern Arizona University, 2018-2019.
+This software was tested on Windows 10 and Ubuntu Linux with python 3.7, tensorflow 2. This software was written by Dr Daniel Buscombe at Northern Arizona University, 2018-2019.
 
 THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IF YOU ENCOUNTER A PROBLEM/BUG OR HAVE A QUESTION OR SUGGESTION, PLEASE USE THE "ISSUES" TAB ON GITHUB. OTHERWISE, THIS SOFTWARE IS UNSUPPORTED.
 
@@ -67,42 +67,13 @@ This takes a few minutes. When it is done, activate environment:
 conda activate owg
 ```
 
-### Keras source code modifications
+## A note on versions and releases
 
-1. go to the keras_applications folder. On Windows anaconda builds this is typically located here:
+This is an evolving project and things move fast in the world of deep learning. During the 8 months the Coastal Engineering paper associated with this repository was in review, Tensorflow and Keras libraries underwent some major changes. Tensorflow did a major upgrade from version 1 to version 2, and keras got subsumed as into Tensorflow as tf.keras.
 
-```C:\Users\yourusername\AppData\Local\Continuum\anaconda3\envs\owg\Lib\site-packages\keras_applications```
+![This](https://github.com/dbuscombe-usgs/OpticalWaveGauging_DNN/releases/tag/11.11.19) is the version of the software that worked in October 2019 prior to the official release of Tensorflow 2, and may be used to exactly reproduce the results of the paper, if you can get it to work using tensorflow 1.X. The  release version "11.11.19" will not work in tensorflow 2.X.
 
-
-2. Zip up all the .py files. Call the zipped file 'orig.zip'. Delete the .py files.
-
-3. Then copy the .py files in conda_env\keras_applications to this directory
-
-
-Finally, (if it is not already there) add the following code to the ```_init_.py``` file in the keras\applications folder, which is typically located here:
-
-```C:\Users\yourusername\AppData\Local\Continuum\anaconda3\envs\owg\Lib\site-packages\keras\applications```
-
-
-```
-def keras_modules_injection(base_fun):
-
-    def wrapper(*args, **kwargs):
-        if hasattr(keras_applications, 'get_submodules_from_kwargs'):
-            kwargs['backend'] = backend
-            kwargs['layers'] = layers
-            kwargs['models'] = models
-            kwargs['utils'] = utils
-        return base_fun(*args, **kwargs)
-
-    return wrapper
-```	
-
-
-
-On Windows anaconda builds this is typically located here:
-
-```C:\Users\yourusername\AppData\Local\Continuum\anaconda3\envs\owg\Lib\site-packages\keras\applications```
+Later releases, including this release, work in Tensorflow 2 using ```tf.keras```
 
 
 ## Setting up the model 
@@ -181,7 +152,9 @@ With height_shift_range=2 possible values are integers [-1, 0, +1], same as with
 
 ## Training models
 
-To train models to predict wave height, the following scripts will do so for all combinations of 4 models (MobileNetV1, MobileNetV2, InceptionV3, and InceptionResnet2), and 4 batch sizes (16, 32, 64, and 128 images). 
+To train models to predict wave height, the following scripts will do so for all combinations of 4 models (MobileNetV1, DenseNet201, InceptionV3, and InceptionResnet2), and 4 batch sizes (16, 32, 64, and 128 images). 
+
+Note that in this Tensorflow 2 version of the repository, DenseNet201 is used instead of MobileNetV2, which was used in the paper but is not implemented correctly at the time of writing using keras in Tensorflow 2 without modifying the MobileNetV2 source script. Therefore DenseNet201 is used instead, which gives similar results to MobileNetV2
 
 ```
 python train_OWG.py -c configfile.json

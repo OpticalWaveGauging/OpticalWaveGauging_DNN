@@ -4,8 +4,8 @@
   "input_image_format" : "jpg",
   "input_csv_file"     : "snap-training-dataset.csv", 
   "category"           : "H",
-  "prc_lower_withheld": 5,
-  "prc_upper_withheld": 5,
+  "prc_lower_withheld": 0,
+  "prc_upper_withheld": 0,
   
   "horizontal_flip"    : false,
   "vertical_flip"      : false,

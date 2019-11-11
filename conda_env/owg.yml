@@ -10,11 +10,10 @@ dependencies:
   - matplotlib
   - imageio
   - h5py
-  - keras==2.2.4
   - pandas
   - pip
   - mkl-service
   - scikit-image
   - scikit-learn
   - requests
-  - tensorflow==1.11.0
+  - tensorflow-gpu==2.0
