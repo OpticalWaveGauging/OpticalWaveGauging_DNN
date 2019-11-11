@@ -186,16 +186,14 @@ if __name__ == '__main__':
 
     							
 	## loop through 4 different batch sizes
-	for batch_size in [128]: #[16,32,64,128]: #
+	for batch_size in [16,32,64,128]: 
 		print ("[INFO] Batch size = "+str(batch_size))
 		
 		## this is the original list of models
 		##archs = {'1':MobileNet, '2':MobileNetV2, '3':InceptionV3, '4':InceptionResNetV2}		
 		## however, for an unknown reason, keras implementation of MobileNetV2 in Tensoeflow 2 is not giving the same result as in Tensorflow 1, so below I have replaced MobileNetV2 with DenseNet201 which is comparable accuracy
-		#archs = {'1':MobileNet, '2':DenseNet201, '3':InceptionV3, '4':InceptionResNetV2}
-		#counter =1
-		archs = {'2':DenseNet201, '3':InceptionV3}
-		counter =2
+		archs = {'1':MobileNet, '2':DenseNet201, '3':InceptionV3, '4':InceptionResNetV2}
+		counter =1
 						
 		## loop through 4 different base models
 		for arch in archs:
