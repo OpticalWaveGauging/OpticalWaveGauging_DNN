@@ -40,9 +40,9 @@ if __name__ == '__main__':
           image_path = arg
 
     ##examples:
-    #image_path = 'snap_images/data/1513706400.cx.snap.jpg' #0.4      
-    #image_path = 'snap_images/data/1516127400.cx.snap.jpg' #1.85
-    #image_path = 'snap_images/data/1516401000.cx.snap.jpg' #2.33
+    #image_path = 'snap_images/data/1513706400.cx.snap.jpg' #H = 0.4      
+    #image_path = 'snap_images/data/1516127400.cx.snap.jpg' #H = 1.85
+    #image_path = 'snap_images/data/1516401000.cx.snap.jpg' #H = 2.33
 
     with open(os.getcwd()+os.sep+'config'+os.sep+'config_test.json') as f:    
 	    config = json.load(f)

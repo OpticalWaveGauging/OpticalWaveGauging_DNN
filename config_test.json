@@ -1,0 +1,16 @@
+{
+  "samplewise_std_normalization" : true,
+  "samplewise_center"  : true,
+  "weights_path" : "waveheight_weights_model1_16batch.best.nearshore.hdf5",
+  "input_csv_file"     : "Nearshore-Training-Oblique-cam2-snap.csv", 
+  "category"           : "H",
+  "im_size"            : 128,
+  "image_direc"        : "snap/data",
+  "prc_lower_withheld": 0,
+  "prc_upper_withheld": 0,
+  "dropout_rate"       : 0.5,
+  "epsilon"            : 0.0001,
+  "min_lr"             : 0.0001,
+  "factor"             : 0.8,    
+  "file_ext": "jpg"  
+}

@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     for opt, arg in opts:
        if opt == '-h':
-          print('Example usage: python test_OWG_folder.py -i train/snap_images')
+          print('Example usage: python test_OWG_folder.py -i snap_images/data')
           sys.exit()
        elif opt in ("-i"):
           image_direc = arg
@@ -92,56 +92,3 @@ if __name__ == '__main__':
     plt.close('all')    
 	
 
-#    df = pd.read_csv(input_csv_file)
-#    base_dir = os.path.normpath(os.getcwd())
-#    if input_csv_file=='IR-training-dataset.csv':
-#       df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_direc,'{}'.format(x)))+".png"
-#    elif input_csv_file=='snap-training-dataset.csv':
-#       df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_direc,'{}'.format(x)))
-#    elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
-#       df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_direc,'{}'.format(x)))+".jpg"
-#		    
-#    df.dropna(inplace = True)
-#    df = df.sort_values(by='time', axis=0)
-
-#    im_gen = ImageDataGenerator(samplewise_center=samplewise_center,  
-#							      samplewise_std_normalization=samplewise_std_normalization, 
-#							      horizontal_flip = False, 
-#							      vertical_flip = False, 
-#							      height_shift_range = 0, 
-#							      width_shift_range = 0, 
-#							      rotation_range = 0,  
-#							      shear_range = 0, 
-#							      fill_mode = 'reflect', 
-#							      zoom_range= 0) 
-	
-	#    json_file = open(weights_path.replace('.hdf5','.json'), 'r')
-#    loaded_model_json = json_file.read()
-#    json_file.close()
-#    OWG = model_from_json(loaded_model_json)
-#    # load weights into new model
-#    OWG.load_weights(weights_path)
-#    print("Loaded model from disk")
-
-#    OWG.compile(optimizer = 'adam', loss = 'mse',metrics = [mae_metric])  #rmsprop
-
-#    test_generator = im_gen.flow_from_dataframe(dataframe=valid_df,
-#								  directory=image_direc,
-#								  x_col="path",
-#								  y_col=category,
-#								  target_size=IMG_SIZE,
-#								  batch_size=len(valid_df),
-#								  color_mode = 'grayscale',
-#								  shuffle=False,
-#								  class_mode='raw')
-#								  	
-#    test_X, test_Y = next(test_generator)
-								      
-#    test_X, test_Y = next(gen_from_df(im_gen, 
-#							       valid_df, 
-#                                 shuffle = False,
-#							     path_col = 'path',
-#							    y_col = category, 
-#							    target_size = IMG_SIZE,
-#							     color_mode = 'grayscale',
-#							    batch_size = len(valid_df))) 	

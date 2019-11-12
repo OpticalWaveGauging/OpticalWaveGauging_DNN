@@ -40,12 +40,12 @@ if __name__ == '__main__':
     try:
        opts, args = getopt.getopt(argv,"h:i:")
     except getopt.GetoptError:
-       print('python predict_image.py -w path/to/folder')
+       print('python gen_ts_from_folder.py -w path/to/folder')
        sys.exit(2)
 
     for opt, arg in opts:
        if opt == '-h':
-          print('Example usage: python predict_image.py -i snap_images/data')
+          print('Example usage: python gen_ts_from_folder.py -i snap_images/data')
           sys.exit()
        elif opt in ("-i"):
           image_path = arg
@@ -125,7 +125,10 @@ if __name__ == '__main__':
     ax=plt.subplot(211)	
     ax.plot_date(mdate.epoch2num(x)[n1:n2], new_df[category][n1:n2],'k', lw=2, label='Measured')
     ax.plot_date(mdate.epoch2num(x)[n1:n2], Vi[n1:n2], 'b.-', lw=2, alpha=0.5, label='Estimated from Image')
-    plt.ylabel(r'$H_s$ (s)')
+    if category=='H':
+       plt.ylabel(r'$H_s$ (m)')
+    else:
+       plt.ylabel(r'$T_p$ (s)')    
     date_formatter = mdate.DateFormatter('%m-%d-%y')
     ax.xaxis.set_major_formatter(date_formatter)
     fig.autofmt_xdate()
@@ -139,7 +142,10 @@ if __name__ == '__main__':
     ax=plt.subplot(211)	
     ax.plot_date(mdate.epoch2num(x), new_df[category],'k', lw=2, label='Measured')
     ax.plot_date(mdate.epoch2num(x), Vi, 'b.-', lw=2, alpha=0.5, label='Estimated from Image')
-    plt.ylabel(r'$H_s$ (s)')
+    if category=='H':
+       plt.ylabel(r'$H_s$ (m)')
+    else:
+       plt.ylabel(r'$T_p$ (s)')
     date_formatter = mdate.DateFormatter('%m-%d-%y')
     ax.xaxis.set_major_formatter(date_formatter)
     fig.autofmt_xdate()
@@ -150,20 +156,3 @@ if __name__ == '__main__':
     new_df.to_csv(image_path.split(os.sep)[0]+'_obs_est_time_series.csv')
 
 
-#    T = []; V = []
-#    files  = sorted(glob(image_path+os.sep+'*.'+file_ext))
-#    
-#    print ("[INFO] Estimate per image ...")
-
-	
-#    counter  = 1
-#    for file in files:
-#        if 100*(len(files)/counter) % 2 == 0:
-#           print('%f percent done' % (100*(counter/len(files))))
-#        pred_Y, t = get_estimate_nopara(OWG,file, samplewise_std_normalization, samplewise_center)
-#        T.append(t)
-#        V.append(pred_Y)
-#        counter += 1
-#    # call the utils.py function get_and_tidy_df        
-#    _, df = get_and_tidy_df(os.path.normpath(os.getcwd()), input_csv_file, image_path, category)
-#       

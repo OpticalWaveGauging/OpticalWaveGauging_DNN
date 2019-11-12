@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     for opt, arg in opts:
        if opt == '-h':
-          print('Example usage: python compile_results.py -i snap_images/data -c config_nearshore_H.json')
+          print('Example usage: python compile_results.py -c config_nearshore_H.json')
           sys.exit()
        elif opt in ("-i"):
           image_dir = arg
@@ -61,15 +61,26 @@ if __name__ == '__main__':
     samplewise_center = config["samplewise_center"]  
     num_epochs = int(config["num_epochs"]) 
     prc_lower_withheld = config['prc_lower_withheld'] 
-    prc_upper_withheld = config['prc_upper_withheld'] 
-	
+    prc_upper_withheld = config['prc_upper_withheld']
+    test_size = float(config["test_size"])	
+    
+    
     base_dir = os.path.normpath(os.getcwd())
 	    
     IMG_SIZE = (im_size, im_size) 
 
+
+    ## download files and unzip
+    if input_csv_file=='IR-training-dataset.csv':
+        image_direc = 'IR_images'+os.sep+'data'
+    elif input_csv_file=='snap-training-dataset.csv':
+        image_direc = 'snap_images'+os.sep+'data'		
+    elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':	
+        image_direc = 'snap'+os.sep+'data'
+
     print ("[INFO] Preparing the data ...")
-    # call the utils.py function get_and_tidy_df            
-	_, df = get_and_tidy_df(os.path.normpath(os.getcwd()), input_csv_file, image_direc, category)
+    # call the utils.py function get_and_tidy_df
+    newdf, df = get_and_tidy_df(os.path.normpath(os.getcwd()), input_csv_file, image_direc, category)
 		
     ## making subsets of data based on prc_lower_withheld and prc_upper_withheld
     if (prc_lower_withheld>0) & (prc_upper_withheld>0):
@@ -89,12 +100,15 @@ if __name__ == '__main__':
     # call the utils.py function im_gen_noaug            
     im_gen = im_gen_noaug(samplewise_std_normalization, samplewise_center)
     
-    # call the utils.py function gen_from_def            
-	train_X, train_Y = gen_from_def(IMG_SIZE, train_df, image_dir, category, im_gen)
-	test_X, test_Y = gen_from_def(IMG_SIZE, valid_df, image_dir, category, im_gen)
-	
-	if (prc_lower_withheld>0) | (prc_upper_withheld>0):	
-	    ex_X, ex_Y = gen_from_def(IMG_SIZE, extreme_df, image_dir, category, im_gen)
+    train_df, valid_df = train_test_split(newdf, test_size = test_size, random_state = 2018, stratify = newdf['category'])
+    print('train', train_df.shape[0], 'validation', valid_df.shape[0])
+    
+    # call the utils.py function gen_from_def
+    train_X, train_Y = gen_from_def(IMG_SIZE, train_df, image_direc, category, im_gen)
+    test_X, test_Y = gen_from_def(IMG_SIZE, valid_df, image_direc, category, im_gen)
+    
+    if (prc_lower_withheld>0) | (prc_upper_withheld>0):
+        ex_X, ex_Y = gen_from_def(IMG_SIZE, extreme_df, image_direc, category, im_gen)
 
 
     #==============================================================    
@@ -103,9 +117,9 @@ if __name__ == '__main__':
     for batch_size in [16,32,64,128]:
         print ("[INFO] Working on batch size = %i ..." % (batch_size))
         for counter in range(1,5):
-            # call the utils.py function get_weights_path                    
-			weights_path = get_weights_path(input_csv_file, category, counter, 
-			                                imsize, batch_size, num_epochs)                	
+            # call the utils.py function get_weights_path
+            weights_path = get_weights_path(input_csv_file, category, counter, 
+			                                im_size, batch_size, num_epochs)                	
             # call the utils.py function load_OWG_json   							    
             OWG = load_OWG_json(weights_path)
             
@@ -125,8 +139,9 @@ if __name__ == '__main__':
             pred_Y = yhat['M'+str(model)+'_B'+str(batch_size)] 
             pred_Y = np.squeeze(np.asarray(pred_Y))
 
-            pred_exY = exyhat['M'+str(model)+'_B'+str(batch_size)] 
-            pred_exY = np.squeeze(np.asarray(pred_exY))
+            if (prc_lower_withheld>0) | (prc_upper_withheld>0):
+                pred_exY = exyhat['M'+str(model)+'_B'+str(batch_size)] 
+                pred_exY = np.squeeze(np.asarray(pred_exY))
                 
             plt.subplot(4,4,counter)
             plt.plot(test_Y, pred_Y, 'b.', markersize=3, label = 'predictions')
@@ -184,94 +199,3 @@ if __name__ == '__main__':
 	
 	
 
-#    im_gen = ImageDataGenerator(samplewise_center=samplewise_center,
-#							    samplewise_std_normalization=samplewise_std_normalization,
-#							    horizontal_flip = False, 
-#							    vertical_flip = False, 
-#							    height_shift_range = 0, 
-#							    width_shift_range = 0, 
-#							    rotation_range = 0,  
-#							    shear_range = 0, 
-#							    fill_mode = 'reflect', 
-#							    zoom_range= 0) 
-	
-	#    df = pd.read_csv(os.path.join(base_dir, input_csv_file))
-#	
-#    if input_csv_file=='snap-training-dataset.csv':
-#       df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))#+".jpg"
-#    elif input_csv_file=='IR-training-dataset.csv':
-#       df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".png"
-#    elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
-#       df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".jpg"
-#	   
-#    df = df.rename(index=str, columns={" H": "H", " T": "T"})   
-
-#    df.dropna(inplace = True)
-
-#    if input_csv_file=='snap-training-dataset.csv':    
-#        df['time'] = [int(k.split(os.sep)[-1].split('.')[0]) for k in df.path]
-#        df = df.sort_values(by='time', axis=0)
-#    elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
-#        df['time'] = [int(k.split(os.sep)[-1].split('.')[0]) for k in df.path]
-#        df = df.sort_values(by='time', axis=0)
-
-#from keras.applications.inception_resnet_v2 import preprocess_input
-#from keras.models import model_from_json
-#from keras.preprocessing.image import ImageDataGenerator
-
-	#            # load json and create model
-#            print("Creating model")						
-#            json_file = open(weights_path.replace('.hdf5','.json'), 'r')
-#            loaded_model_json = json_file.read()
-#            json_file.close()
-#            OWG = model_from_json(loaded_model_json)
-#            print("Loading weights into model")			
-#            # load weights into new model
-#            OWG.load_weights(weights_path)
-#            print("Loaded model "+str(counter)+" from disk")
-
-#            OWG.compile(optimizer = 'adam', loss = 'mse',metrics = [mae_metric]) 
-
-#    test_generator = im_gen.flow_from_dataframe(
-#        dataframe=df,
-#        directory=image_dir,
-#        x_col="path",
-#        y_col=category,
-#        target_size=IMG_SIZE,
-#        batch_size=len(df),
-#        color_mode = 'grayscale',
-#        shuffle=False,
-#        class_mode='raw')
-
-#    test_X, test_Y = next(test_generator)
-
-#    ex_generator = im_gen.flow_from_dataframe(
-#        dataframe=extreme_df,
-#        directory=image_dir,
-#        x_col="path",
-#        y_col=category,
-#        target_size=IMG_SIZE,
-#        batch_size=len(extreme_df),
-#        color_mode = 'grayscale',
-#        shuffle=False,
-#        class_mode='raw')
-
-#    ex_X, ex_Y = next(ex_generator)
-    							      
-#    test_X, test_Y = next(gen_from_df(im_gen, 
-#							       df, 
-#                                 shuffle = False,
-#							     path_col = 'path',
-#							    y_col = category, #'zscore', 
-#							    target_size = IMG_SIZE,
-#							     color_mode = 'grayscale',
-#							    batch_size = len(df)))     
-
-
-#    ex_X, ex_Y = next(gen_from_df(im_gen, 
-#							   extreme_df, 
-#							 path_col = 'path',
-#							y_col = category, #'zscore', 
-#							target_size = IMG_SIZE,
-#							 color_mode = 'grayscale',
-#							batch_size = len(extreme_df)))	

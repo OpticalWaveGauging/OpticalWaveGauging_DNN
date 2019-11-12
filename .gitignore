@@ -1,0 +1,8 @@
+im128/res/200epoch/H/model4/batch16/*hdf5
+im128/res/200epoch/H/model4/batch32/*hdf5
+im128/res/200epoch/H/model4/batch64/*hdf5
+im128/res/200epoch/H/model4/batch128/*hdf5
+im128/res/200epoch/T/model4/batch16/*hdf5
+im128/res/200epoch/T/model4/batch32/*hdf5
+im128/res/200epoch/T/model4/batch64/*hdf5
+im128/res/200epoch/T/model4/batch128/*hdf5

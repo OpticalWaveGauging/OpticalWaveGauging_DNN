@@ -1,9 +1,9 @@
 {
   "samplewise_std_normalization" : true,
   "samplewise_center"  : true,
-  "weights_path" : "im128/res/200epoch/H/model4/batch16/waveheight_weights_model4_16batch.best.nearshore.hdf5",
+  "weights_path" : "im128/res/200epoch/T/model1/batch16/waveperiod_weights_model1_16batch.best.nearshore.hdf5",
   "input_csv_file"     : "snap-training-dataset.csv", 
-  "category"           : "H",
+  "category"           : "T",
   "im_size"            : 128,
   "image_direc"        : "snap_images/data",
   "prc_lower_withheld": 0,

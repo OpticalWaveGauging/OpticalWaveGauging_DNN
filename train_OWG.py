@@ -44,7 +44,6 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 import tensorflow as tf
 
-
 #==============================================================	
 ## script starts here
 if __name__ == '__main__':
@@ -103,41 +102,51 @@ if __name__ == '__main__':
 	prc_upper_withheld = config['prc_upper_withheld'] 
 	 
 	base_dir = os.path.normpath(os.getcwd()) 
-	
+
 	## download files and unzip
 	if input_csv_file=='IR-training-dataset.csv':
 		print('Downloading IR imagery ...')
 		print('... file is ~2GB - takes a while')
-		url = 'https://drive.google.com/file/d/1ljkY4akD8O8ShLyOywTnyQl7GsH3KIJ3/view?usp=sharing'
+		url = 'https://drive.google.com/file/d/1rToH8sebTCptSv8vMSo-UToSy1Nm7KgI/view?usp=sharing'
 		image_dir = 'IR_images'+os.sep+'data'
 		if not os.path.isdir(os.path.join(base_dir,image_dir)):
-			file_id = '1ljkY4akD8O8ShLyOywTnyQl7GsH3KIJ3'
+			file_id = '1rToH8sebTCptSv8vMSo-UToSy1Nm7KgI'
 			destination = 'IR_images.zip'
 			download_file_from_google_drive(file_id, destination)
 			print('download complete ... unzipping')	
 			zip_ref = zipfile.ZipFile(destination, 'r')
-			zip_ref.extractall(os.getcwd()+os.sep+'train')
+			zip_ref.extractall(os.getcwd())
 			zip_ref.close()
 			os.remove(destination)
-		
 	elif input_csv_file=='snap-training-dataset.csv':
 		print('Downloading nearshore imagery ...')
-		print('... file is ~1GB - takes a while')
-		#url = 'https://drive.google.com/file/d/1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM/view?usp=sharing'
-		url = 'https://drive.google.com/file/d/1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx/view?usp=sharing'
+		print('... file is ~421MB - takes a while')
+		url = 'https://drive.google.com/file/d/11xd3HWcfEE_yMYcSsr1StFFPSdXNAjKH/view?usp=sharing'
 		image_dir = 'snap_images'+os.sep+'data'
 		if not os.path.isdir(os.path.join(base_dir,image_dir)):
-			file_id = '1TVnuPnrbIhtv0y7BXpiXmJMElf7KnSXx' #'1QqPUbgXudZSDFXH2VaP30TQYR6PY0acM'
+			file_id = '11xd3HWcfEE_yMYcSsr1StFFPSdXNAjKH'
 			destination = 'snap_images.zip'
 			download_file_from_google_drive(file_id, destination)	
 			print('download complete ... unzipping')	
 			zip_ref = zipfile.ZipFile(destination, 'r')
-			zip_ref.extractall(os.getcwd()+os.sep+'train')
+			zip_ref.extractall(os.getcwd())
 			zip_ref.close()
 			os.remove(destination)		
 	elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
+		print('Downloading nearshore oblique imagery ...')
+		print('... file is ~257MB - takes a while')
+		url = 'https://drive.google.com/file/d/1N2iaH7eD9msBPtqBUHJJrasInf9tICou/view?usp=sharing'		
 		image_dir = 'snap'+os.sep+'data'
-		
+		if not os.path.isdir(os.path.join(base_dir,image_dir)):
+			file_id = '1N2iaH7eD9msBPtqBUHJJrasInf9tICou' 
+			destination = 'snap.zip'
+			download_file_from_google_drive(file_id, destination)	
+			print('download complete ... unzipping')	
+			zip_ref = zipfile.ZipFile(destination, 'r')
+			zip_ref.extractall(os.getcwd())
+			zip_ref.close()
+			os.remove(destination)	
+
 	IMG_SIZE = (imsize, imsize) 
 
     # call the utils.py function get_and_tidy_df            	
@@ -186,7 +195,7 @@ if __name__ == '__main__':
 
     							
 	## loop through 4 different batch sizes
-	for batch_size in [16,32,64,128]: 
+	for batch_size in [128]: #[16,32,64,128]: 
 		print ("[INFO] Batch size = "+str(batch_size))
 		
 		## this is the original list of models
@@ -194,7 +203,7 @@ if __name__ == '__main__':
 		## however, for an unknown reason, keras implementation of MobileNetV2 in Tensoeflow 2 is not giving the same result as in Tensorflow 1, so below I have replaced MobileNetV2 with DenseNet201 which is comparable accuracy
 		archs = {'1':MobileNet, '2':DenseNet201, '3':InceptionV3, '4':InceptionResNetV2}
 		counter =1
-						
+								
 		## loop through 4 different base models
 		for arch in archs:
 			print("==========================================================")
@@ -381,138 +390,3 @@ if __name__ == '__main__':
 #			    # load the new model weights							  
 #			    OWG.load_weights(weights_path)
 
-
-#	df = pd.read_csv(os.path.join(base_dir, input_csv_file))
-#	if input_csv_file=='IR-training-dataset.csv':
-#		df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".png"
-#	elif input_csv_file=='snap-training-dataset.csv':
-#		df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))
-#	elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
-#		df['path'] = df['id'].map(lambda x: os.path.join(base_dir,image_dir,'{}'.format(x)))+".jpg"
-#		
-#	df = df.rename(index=str, columns={" H": "H", " T": "T"})   
-#	
-#	if category == 'H':
-#		mean = df['H'].mean() 
-#		div = df['H'].std() 
-#		df['zscore'] = df['H'].map(lambda x: (x-mean)/div)
-#	elif category == 'T':
-#		mean = df['T'].mean() 
-#		div = df['T'].std() 
-#		df['zscore'] = df['T'].map(lambda x: (x-mean)/div)			
-#	else:
-#		print("Unknown category: "+str(category))
-#		print("Fix config file, exiting now ...")
-#		sys.exit()
-#	
-#	df.dropna(inplace = True)
-#	try:
-#		df = df.sort_values(by='time', axis=0)
-#	except:
-#		df = df.sort_values(by='id', axis=0)
-
-#	if category == 'H':
-#		df['category'] = pd.cut(df['H'], 10)
-#	else:
-#		df['category'] = pd.cut(df['T'], 8)
-#		
-#	df['index1'] = df.index
-
-#	if input_csv_file=='IR-training-dataset.csv':
-#		new_df = df.groupby(['category']).apply(lambda x: x.sample(int(len(df)/2), replace = True)).reset_index(drop = True)
-#	elif input_csv_file=='snap-training-dataset.csv':
-#		new_df = df.groupby(['category']).apply(lambda x: x.sample(int(len(df)/2), replace = True)).reset_index(drop = True)
-#	elif input_csv_file=='Nearshore-Training-Oblique-cam2-snap.csv':
-#		new_df = df.groupby(['category']).apply(lambda x: x.sample(int(len(df)/2), replace = True)).reset_index(drop = True)
-
-
-#from keras.applications.mobilenet import MobileNet
-
-#try:
-#   from keras.applications.mobilenet_v2 import MobileNetV2
-#except:
-#   from keras.applications.mobilenetv2 import MobileNetV2
-
-#from keras.applications.inception_v3 import InceptionV3
-#from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
-
-#from keras.layers import GlobalAveragePooling2D, Dense, Dropout, Flatten, BatchNormalization
-#from keras.models import Sequential
-#from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-
-#from keras.preprocessing.image import ImageDataGenerator
-
-
-#	test_generator = im_gen.flow_from_dataframe(dataframe=valid_df,
-#								  directory=image_dir,
-#								  x_col="path",
-#								  y_col=category,
-#								  target_size=IMG_SIZE,
-#								  batch_size=len(valid_df),
-#								  color_mode = 'grayscale',
-#								  shuffle=False,
-#								  class_mode='raw')
-#								  	
-#	test_X, test_Y = next(test_generator)
-	
-#	ex_generator = im_gen.flow_from_dataframe(dataframe=extreme_df,
-#								  directory=image_dir,
-#								  x_col="path",
-#								  y_col=category,
-#								  target_size=IMG_SIZE,
-#								  batch_size=len(extreme_df),
-#								  color_mode = 'grayscale',
-#								  shuffle=False,
-#								  class_mode='raw')
-#								  	
-#	ex_X, ex_Y = next(ex_generator)
-
-#	test_X, test_Y = next(gen_from_df(im_gen, 
-#								   valid_df, 
-#								 path_col = 'path',
-#								y_col = category, 
-#								target_size = IMG_SIZE,
-#								 color_mode = 'grayscale',
-#								batch_size = len(train_df))) 	
-									
-#	train_X, train_Y = next(gen_from_df(im_gen, 
-#								   train_df, 
-#								 path_col = 'path',
-#								y_col = category,
-#								target_size = IMG_SIZE,
-#								 color_mode = 'grayscale',
-#								batch_size = len(train_df))) 								
-	
-#	ex_X, ex_Y = next(gen_from_df(im_gen, 
-#								   extreme_df, 
-#								 path_col = 'path',
-#								y_col = category, #'zscore', 
-#								target_size = IMG_SIZE,
-#								 color_mode = 'grayscale',
-#								batch_size = len(extreme_df)))
-	
-			
-			# out ={}
-			# out['rms'] = np.sqrt(np.nanmean((pred_Y - test_Y)**2))
-			# out['rsq'] = np.min(np.corrcoef(test_Y, pred_Y))**2
-			# out['rms_ex'] = np.sqrt(np.nanmean((ex_Y - pred_extreme_Y)**2))
-			# out['rsq_ex'] = np.min(np.corrcoef(ex_Y, pred_extreme_Y))**2
-			# out['y'] = test_Y
-			# out['yhat'] = pred_Y
-			# out['yhat_extreme'] = pred_extreme_Y
-			# out['test_X'] = test_X
-			# out['test_Y'] = test_Y
-			# out['extreme_X'] = ex_X
-			# out['extreme_Y'] = ex_Y
-			# out['history_train_mae'] = history.history['mae_metric']
-			# out['history_val_mae'] = history.history['val_mae_metric']
-			# out['history_train_loss'] = history.history['loss']
-			# out['history_val_loss'] = history.history['val_loss']
-			
-			# if input_csv_file=='IR-training-dataset.csv':
-			    # savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_IR.mat', out, do_compression=True)
-			# else:
-			    # savemat(os.getcwd()+os.sep+'im'+str(imsize)+os.sep+'res'+os.sep+str(num_epochs)+'epoch'+os.sep+category+os.sep+'model'+str(counter)+os.sep+'batch'+str(batch_size)+os.sep+'im'+str(IMG_SIZE[0])+'_model'+str(counter)+'_'+str(num_epochs)+'epoch'+str(batch_size)+'batch_nearshore.mat', out, do_compression=True)		    
-			    
-			# list all data in history
-			#print(history.history.keys())	
